@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
-const { StorageDriver } = require('./index');
+const { StorageDriver } = require('./types');
 
 /**
  * FileSystem Driver - Default local storage

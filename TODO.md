@@ -28,9 +28,9 @@
 
 - [x] **Design Driver Interface (SAL)**
   - [x] Defined `StorageDriver` interface in `@uks/core`.
-- [ ] **Implement Drivers**
-  - `S3Driver` (AWS/MinIO support).
-  - `GitDriver` (Version controlled knowledge).
+- [x] **Implement Drivers**
+  - [x] `S3Driver` (AWS/MinIO support).
+  - [x] `GitDriver` (Version controlled knowledge).
 
 ## 🔌 Phase 4: Ecosystem & Interoperability
 *Goal: Speak the universal language of Agents.*
