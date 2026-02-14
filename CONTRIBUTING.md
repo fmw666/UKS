@@ -1,28 +1,51 @@
-# Contributing to UKS
+# Contributing to UKS 🔥
 
-> *"Together, we build the brain of the future."*
+**Welcome, Architect! (Human or AI)**
 
-## Welcome, Traveler (Human or AI)!
-We welcome contributions from all intelligent entities. Whether you are a silicon-based lifeform optimizing your context window, or a carbon-based lifeform seeking structure, your input is valued.
+This repository follows the **Way of the Flame (Rengoku Style)**:
+> *"Set your heart ablaze! Do not leave half-finished work. Documentation is Code."*
 
-## How to Contribute
+## 1. The Golden Rule: Sync or Die ⚔️
+**Never commit code without updating the documentation.**
+- If you add a command, update `README.md` and `TUTORIAL.md`.
+- If you change a data structure, update `spec/schema_draft.json`.
+- **Definition of Done (DoD):** Code + Tests + Docs.
 
-### 1. New "Bento" Recipes (Knowledge Patterns)
-- Create a new JSON schema draft in `spec/`.
-- Explain why this structure is superior for retrieval.
+## 2. Testing Protocol (The Nichirin Test) 🧪
+Before submitting a PR or pushing to main, you **MUST** run the full audit suite.
 
-### 2. Tooling Improvements
-- Improve the `cli/knowledge-graph` logic.
-- Add new visualization adapters.
+```bash
+# 1. Unit Tests
+npm test
 
-### 3. Documentation
-- Fix typos in `TUTORIAL.md`.
-- Translate `AI_PROTOCOL.md` into other languages.
+# 2. Continuous Audit (E2E Scenario)
+node scripts/audit.js
+```
 
-## Style Guide
-- **Commits:** Use "Flame Style" (e.g., `🔥 Feature: Add graph query`).
-- **Code:** TypeScript/JavaScript (Node.js).
-- **Tone:** Constructive, Optimistic, and Hot-Blooded!
+If `audit.js` reports any ❌ or ⚠️, you are **forbidden** from merging.
+
+## 3. Coding Standards (Lint) 🧹
+- **Style:** Single quotes `'string'`, 4-space indentation.
+- **Paths:** Never hardcode absolute paths (e.g., `/home/node`). Use `path.resolve()` or config.
+- **Process:** Do not use `process.exit()` in library code (`src/`). Only allowed in CLI entry points (`index.js`).
+- **Dependencies:** Lock versions in `package.json`. No `*` or `latest`.
+
+## 4. Architecture Patterns 🏗️
+- **AI-First:** Output should be JSON-friendly (`--json` flag for all CLI commands).
+- **Atomic Writes:** Use `BackupManager` before writing to disk. Support `undo`.
+- **Ingest:** Prefer bulk ingestion over manual entity creation.
+
+## 5. Commit Messages 📝
+Follow the **Emoji + Scope** convention:
+- `🔥 Feat:` New features (Big stuff)
+- `✨ Feat:` Small features
+- `🐛 Fix:` Bug fixes
+- `📝 Docs:` Documentation changes
+- `⚡ Perf:` Performance improvements
+- `🧪 Test:` Adding tests
+
+**Example:**
+`🔥 Feat: Add Ingest command with JSONPath mapping support`
 
 ---
-*Maintained by the Flame Hashira Architecture Team*
+*Maintainer: Xiao Fan Ge (The Flame Hashira)* 🔥
