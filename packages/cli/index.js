@@ -19,6 +19,7 @@ program
     .option('--dry-run', 'Simulate ingestion without writing')
     .option('--json', 'Output result in JSON format for automation')
     .option('--map <config>', 'Path to mapping configuration (JSON)')
+    .option('--strict', 'Enforce schema validation for all files')
     .action(async (pattern, options) => {
         try {
             const report = await ingestManager.ingest(pattern, options);

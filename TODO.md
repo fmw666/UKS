@@ -8,7 +8,7 @@ Driven by feedback from Little Junjie.
     - Ensure strict typing for `entityType` and `observations`.
 - [x] **IDE Integration**
     - Create `.vscode/settings.json` to auto-link the schema to `*.bento.json` or `knowledge/**/*.json`.
-- [ ] **CLI Validation**
+- [x] **CLI Validation**
     - Upgrade `ingest` command to validate JSON against the schema before importing.
 
 ## Phase 2: Intelligence (Vector)
