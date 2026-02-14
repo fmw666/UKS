@@ -3,8 +3,11 @@ const path = require('path');
 const { existsSync } = require('fs');
 const crypto = require('crypto'); // Native UUID
 
+const config = require('./config');
+const BackupManager = require('./backup-manager'); // New
+
 // Configuration
-const BASE_MEMORY_PATH = process.env.UKS_STORAGE_PATH || path.resolve(process.cwd(), '.northstar');
+const BASE_MEMORY_PATH = process.env.UKS_STORAGE_PATH || config.get('storagePath') || path.resolve(process.cwd(), '.northstar');
 const FILE_MARKER = { type: '_aim', source: 'local-knowledge-graph', version: '1.1.0' }; // Bump version
 const LOCK_FILE = path.join(BASE_MEMORY_PATH, '.lock');
 
@@ -12,6 +15,10 @@ const LOCK_FILE = path.join(BASE_MEMORY_PATH, '.lock');
 if (!existsSync(BASE_MEMORY_PATH)) {
     require('fs').mkdirSync(BASE_MEMORY_PATH, { recursive: true });
 }
+
+// Ensure backup path exists
+const backupMgr = new BackupManager(BASE_MEMORY_PATH);
+backupMgr.ensureDir();
 
 function getFilePath(context = 'default') {
     return path.join(BASE_MEMORY_PATH, `graph-${context}.jsonl`);
@@ -93,6 +100,9 @@ class KnowledgeGraphManager {
         }
 
         try {
+            // Backup before write! (Reversibility)
+            await backupMgr.createSnapshot(context);
+
             const filePath = getFilePath(context);
             const lines = [
                 JSON.stringify(FILE_MARKER),
@@ -100,6 +110,19 @@ class KnowledgeGraphManager {
                 ...graph.relations.map(r => JSON.stringify({ ...r, type: 'relation' }))
             ];
             await fs.writeFile(filePath, lines.join('\n'));
+        } finally {
+            await releaseLock();
+        }
+    }
+
+    // New: Undo
+    async undo(context = 'default') {
+        if (!await acquireLock()) {
+            throw new Error('Failed to acquire lock: Graph is busy.');
+        }
+        try {
+            const restoredFile = await backupMgr.restoreLatest(context);
+            return restoredFile;
         } finally {
             await releaseLock();
         }

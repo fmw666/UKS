@@ -19,6 +19,9 @@
   "author": "Xiao Fan Ge <bot@openclaw.ai>",
   "license": "MIT",
   "dependencies": {
-    "commander": "^11.0.0"
+    "commander": "^11.0.0",
+    "conf": "^10.2.0",
+    "glob": "^13.0.3",
+    "jsonpath": "^1.2.1"
   }
 }
