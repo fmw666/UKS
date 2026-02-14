@@ -1,0 +1,4 @@
+{"type":"_aim","source":"local-knowledge-graph","version":"1.1.0"}
+{"id":"urn:uks:local:framework:2706887e-de53-40d1-87fa-d6c87dbef033","name":"NestJS","entityType":"Framework","observations":["Node.js","TypeScript","Backend"],"type":"entity"}
+{"id":"urn:uks:local:architecture:bcbb351a-6e77-4001-bcf5-23c67cd20fb8","name":"Microservices","entityType":"Architecture","observations":[],"type":"entity"}
+{"fromId":"urn:uks:local:framework:2706887e-de53-40d1-87fa-d6c87dbef033","toId":"urn:uks:local:architecture:bcbb351a-6e77-4001-bcf5-23c67cd20fb8","fromName":"NestJS","toName":"Microservices","relationType":"supports","type":"relation"}

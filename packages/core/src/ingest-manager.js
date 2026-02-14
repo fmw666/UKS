@@ -5,7 +5,7 @@ const jsonpath = require('jsonpath'); // Flexible extraction
 const graphManager = require('./graph-manager');
 const crypto = require('crypto'); // Need for ID generation inside batch
 const Ajv = require('ajv');
-const { PluginManager } = require('@uks/core');
+const PluginManager = require('./plugin-manager'); // Fix: Relative import
 const vectorManager = require('./vector-manager'); // Vector Support
 
 // Load Schema
