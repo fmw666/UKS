@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 const graphManager = require('./src/graph-manager');
 const { program } = require('commander');
 
