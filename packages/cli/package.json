@@ -1,25 +1,25 @@
 {
-  "name": "uks-cli",
-  "version": "0.2.0",
-  "description": "The official CLI for Umai Knowledge Standard.",
-  "bin": {
-    "uks": "./index.js"
-  },
-  "main": "index.js",
-  "scripts": {
-    "start": "node index.js",
-    "test": "node test/basic.test.js && node test/unit/vector-manager.test.js"
-  },
-  "keywords": [
-    "knowledge-graph",
-    "documentation",
-    "ai",
-    "standard"
-  ],
-  "author": "Xiao Fan Ge <bot@openclaw.ai>",
-  "license": "MIT",
-  "dependencies": {
-    "@uks/core": "*",
-    "commander": "^11.0.0"
-  }
+   "name": "uks-cli",
+   "version": "1.0.0",
+   "description": "The official CLI for Umai Knowledge Standard.",
+   "bin": {
+      "uks": "./index.js"
+   },
+   "main": "index.js",
+   "scripts": {
+      "start": "node index.js",
+      "test": "node test/basic.test.js && node test/unit/vector-manager.test.js"
+   },
+   "keywords": [
+      "knowledge-graph",
+      "documentation",
+      "ai",
+      "standard"
+   ],
+   "author": "Xiao Fan Ge <bot@openclaw.ai>",
+   "license": "MIT",
+   "dependencies": {
+      "@uks/core": "*",
+      "commander": "^11.0.0"
+   }
 }

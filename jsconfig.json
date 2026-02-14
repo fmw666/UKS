@@ -1,12 +1,29 @@
 {
-  "compilerOptions": {
-    "module": "commonjs",
-    "target": "es2020",
-    "baseUrl": ".",
-    "paths": {
-      "@uks/core": ["packages/core/index.js"],
-      "@uks/cli": ["packages/cli/index.js"]
-    }
-  },
-  "exclude": ["node_modules", "dist"]
+    "compilerOptions": {
+        "checkJs": true,
+        "strict": false,
+        "target": "ES2022",
+        "module": "commonjs",
+        "moduleResolution": "node",
+        "baseUrl": ".",
+        "paths": {
+            "@uks/core": ["packages/core/index.js"],
+            "@uks/core/*": ["packages/core/*"]
+        },
+        "resolveJsonModule": true,
+        "esModuleInterop": true
+    },
+    "include": [
+        "packages/*/src/**/*.js",
+        "packages/*/index.js",
+        "packages/*/types.js",
+        "packages/*/drivers.js",
+        "scripts/**/*.js"
+    ],
+    "exclude": [
+        "node_modules",
+        "**/node_modules",
+        ".backups",
+        "knowledge"
+    ]
 }

@@ -8,36 +8,60 @@
         body { margin: 0; overflow: hidden; background-color: #1a1a1a; color: #fff; font-family: sans-serif; }
         #graph { width: 100vw; height: 100vh; }
         .controls { position: absolute; top: 10px; left: 10px; background: rgba(0,0,0,0.7); padding: 10px; border-radius: 5px; }
+        .error { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; color: #ff6b6b; }
+        .loading { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; }
     </style>
-    <script src="https://unpkg.com/force-graph"></script>
+    <!-- Pinned version with crossorigin for SRI readiness -->
+    <script src="https://unpkg.com/force-graph@1.47.4/dist/force-graph.min.js" crossorigin="anonymous"></script>
 </head>
 <body>
     <div class="controls">
-        <h3>🔥 UKS Visualizer</h3>
+        <h3>UKS Visualizer</h3>
         <p>Left-click: Rotate</p>
         <p>Right-click: Pan</p>
         <p>Scroll: Zoom</p>
     </div>
     <div id="graph"></div>
+    <div id="status" class="loading">Loading graph...</div>
 
     <script>
-        fetch('/api/graph')
-            .then(res => res.json())
-            .then(data => {
-                const Graph = ForceGraph()
-                    (document.getElementById('graph'))
-                    .graphData(data)
-                    .nodeId('id')
-                    .nodeLabel('id')
-                    .nodeAutoColorBy('group')
-                    .linkDirectionalParticles(2)
-                    .linkDirectionalParticleSpeed(d => 0.005)
-                    .onNodeDragEnd(node => {
-                        node.fx = node.x;
-                        node.fy = node.y;
-                    });
-            })
-            .catch(err => console.error(err));
+        (function () {
+            var statusEl = document.getElementById('status');
+
+            fetch('/api/graph')
+                .then(function (res) {
+                    if (!res.ok) throw new Error('HTTP ' + res.status + ': ' + res.statusText);
+                    return res.json();
+                })
+                .then(function (data) {
+                    statusEl.style.display = 'none';
+
+                    if (!data.nodes || data.nodes.length === 0) {
+                        statusEl.className = 'error';
+                        statusEl.textContent = 'No data in graph. Add some entities first.';
+                        statusEl.style.display = 'block';
+                        return;
+                    }
+
+                    ForceGraph()
+                        (document.getElementById('graph'))
+                        .graphData(data)
+                        .nodeId('id')
+                        .nodeLabel(function (node) { return node.label || node.id; })
+                        .nodeAutoColorBy('group')
+                        .linkDirectionalParticles(2)
+                        .linkDirectionalParticleSpeed(0.005)
+                        .onNodeDragEnd(function (node) {
+                            node.fx = node.x;
+                            node.fy = node.y;
+                        });
+                })
+                .catch(function (err) {
+                    console.error('Failed to load graph:', err);
+                    statusEl.className = 'error';
+                    statusEl.textContent = 'Failed to load graph: ' + err.message;
+                });
+        })();
     </script>
 </body>
 </html>

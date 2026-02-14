@@ -1,2 +1,4 @@
 {"type":"_aim","source":"local-knowledge-graph","version":"1.1.0"}
-{"id":"c345c302-1007-4c31-a1f5-0ba6b063b80c","name":"Valid Entity","entityType":"KnowledgeAsset","observations":[],"type":"entity"}
+{"id":"urn:uks:local:framework:sample-nestjs","name":"NestJS","entityType":"Framework","observations":["Backend","TypeScript","Node.js"],"type":"entity"}
+{"id":"urn:uks:local:architecture:sample-microservices","name":"Microservices","entityType":"Architecture","observations":["Distributed","Scalable"],"type":"entity"}
+{"fromId":"urn:uks:local:framework:sample-nestjs","toId":"urn:uks:local:architecture:sample-microservices","fromName":"NestJS","toName":"Microservices","relationType":"supports","type":"relation"}

@@ -1,192 +1,343 @@
+// @ts-check
+'use strict';
+
 const fs = require('fs').promises;
+const fsSync = require('fs');
 const path = require('path');
-const { existsSync } = require('fs');
-const crypto = require('crypto'); // Native UUID
-// @xenova/transformers is ESM-only: load only when semantic search is used (dynamic import)
-const config = require('./config');
-const BackupManager = require('./backup-manager'); // New
+const crypto = require('crypto');
+const BackupManager = require('./backup-manager');
+const { LockError, StorageError, NotFoundError } = require('./errors');
+const { requireString, sanitizeString, validateObservations, validateContext } = require('./validator');
 
-// Configuration
-const BASE_MEMORY_PATH = process.env.UKS_STORAGE_PATH || config.get('storagePath') || path.resolve(process.cwd(), '.northstar');
-const FILE_MARKER = { type: '_aim', source: 'local-knowledge-graph', version: '1.1.0' }; // Bump version
-const LOCK_FILE = path.join(BASE_MEMORY_PATH, '.lock');
+/**
+ * @typedef {object} Entity
+ * @property {string} id
+ * @property {string} name
+ * @property {string} entityType
+ * @property {string[]} observations
+ */
 
-// Ensure base path exists
-if (!existsSync(BASE_MEMORY_PATH)) {
-    require('fs').mkdirSync(BASE_MEMORY_PATH, { recursive: true });
-}
+/**
+ * @typedef {object} Relation
+ * @property {string} fromId
+ * @property {string} toId
+ * @property {string} fromName
+ * @property {string} toName
+ * @property {string} relationType
+ */
 
-// Ensure backup path exists
-const backupMgr = new BackupManager(BASE_MEMORY_PATH);
-backupMgr.ensureDir();
+/**
+ * @typedef {object} Graph
+ * @property {Entity[]} entities
+ * @property {Relation[]} relations
+ */
 
-function getFilePath(context = 'default') {
-    return path.join(BASE_MEMORY_PATH, `graph-${context}.jsonl`);
-}
+/**
+ * @typedef {object} GraphManagerOptions
+ * @property {string} [basePath] - Directory for storing graph files
+ * @property {BackupManager} [backupManager] - Injected backup manager
+ * @property {{getStoragePath: () => string}} [config] - Injected config
+ * @property {{type: string, source: string, version: string}} [fileMarker]
+ * @property {number} [lockTimeoutMs] - Max age of a lock before forced release (default: 5000)
+ * @property {number} [lockRetries] - Number of lock acquisition attempts (default: 3)
+ */
 
-// Simple File Lock Implementation
-async function acquireLock(retries = 3) {
-    for (let i = 0; i < retries; i++) {
-        try {
-            await fs.writeFile(LOCK_FILE, String(process.pid), { flag: 'wx' });
-            return true;
-        } catch (e) {
-            if (e.code === 'EEXIST') {
-                const stat = await fs.stat(LOCK_FILE);
-                if (Date.now() - stat.mtimeMs > 5000) {
-                    await fs.unlink(LOCK_FILE);
-                    continue;
+/**
+ * Core Knowledge Graph Manager.
+ * Handles CRUD operations, atomic batch updates, and undo via backup.
+ *
+ * NOTE: No singleton — always create via `new` or use `createContainer()`.
+ */
+class KnowledgeGraphManager {
+    /**
+     * @param {GraphManagerOptions} [options]
+     */
+    constructor(options = {}) {
+        const basePath = options.basePath
+            || (options.config && options.config.getStoragePath())
+            || process.env.UKS_STORAGE_PATH
+            || path.resolve(process.cwd(), './knowledge/uks_graph');
+
+        /** @type {string} */
+        this.baseMemoryPath = basePath;
+        /** @type {{type: string, source: string, version: string}} */
+        this.fileMarker = options.fileMarker || { type: '_aim', source: 'local-knowledge-graph', version: '1.1.0' };
+        /** @type {string} */
+        this.lockFile = path.join(this.baseMemoryPath, '.lock');
+        /** @type {number} */
+        this.lockTimeoutMs = options.lockTimeoutMs || 5000;
+        /** @type {number} */
+        this.lockRetries = options.lockRetries || 3;
+        /** @type {BackupManager} */
+        this.backupMgr = options.backupManager || new BackupManager(this.baseMemoryPath);
+
+        if (!fsSync.existsSync(this.baseMemoryPath)) {
+            fsSync.mkdirSync(this.baseMemoryPath, { recursive: true });
+        }
+        this.backupMgr.ensureDir();
+    }
+
+    /**
+     * Get the JSONL file path for a given context.
+     * @param {string} [context='default']
+     * @returns {string}
+     */
+    getFilePath(context = 'default') {
+        return path.join(this.baseMemoryPath, `graph-${context}.jsonl`);
+    }
+
+    /**
+     * Acquire an exclusive file lock with stale-PID detection.
+     *
+     * If the lock file exists, we check whether the holding process is still alive.
+     * Dead processes' locks are cleaned up automatically.
+     * Live processes' locks are respected, unless the lock is older than `lockTimeoutMs`.
+     *
+     * @param {number} [retries] - Override default retry count
+     * @returns {Promise<boolean>} True if lock was acquired
+     */
+    async acquireLock(retries) {
+        const maxRetries = retries ?? this.lockRetries;
+        for (let i = 0; i < maxRetries; i++) {
+            try {
+                await fs.writeFile(this.lockFile, String(process.pid), { flag: 'wx' });
+                return true;
+            } catch (e) {
+                if (/** @type {NodeJS.ErrnoException} */ (e).code === 'EEXIST') {
+                    try {
+                        const lockContent = await fs.readFile(this.lockFile, 'utf-8');
+                        const lockPid = parseInt(lockContent.trim(), 10);
+
+                        // Check if the lock-holding process is still alive
+                        let processAlive = false;
+                        if (!isNaN(lockPid)) {
+                            try {
+                                process.kill(lockPid, 0); // Signal 0 = existence check
+                                processAlive = true;
+                            } catch {
+                                processAlive = false;
+                            }
+                        }
+
+                        if (!processAlive) {
+                            // Stale lock from a dead process — safe to remove
+                            await fs.unlink(this.lockFile).catch(() => {});
+                            continue;
+                        }
+
+                        // Lock held by a live process — check if it's timed out
+                        const stat = await fs.stat(this.lockFile);
+                        if (Date.now() - stat.mtimeMs > this.lockTimeoutMs) {
+                            await fs.unlink(this.lockFile).catch(() => {});
+                            continue;
+                        }
+                    } catch {
+                        // Lock file disappeared between checks — retry immediately
+                        continue;
+                    }
+
+                    await new Promise(r => setTimeout(r, 100));
+                } else {
+                    throw new LockError(`Failed to acquire lock: ${/** @type {Error} */ (e).message}`, { path: this.lockFile });
                 }
-                await new Promise(r => setTimeout(r, 100));
-            } else {
-                throw e;
             }
         }
+        return false;
     }
-    return false;
-}
 
-async function releaseLock() {
-    try {
-        await fs.unlink(LOCK_FILE);
-    } catch(e) { /* ignore */ }
-}
+    /**
+     * Release the file lock, but only if we own it (PID check).
+     * @returns {Promise<void>}
+     */
+    async releaseLock() {
+        try {
+            const content = await fs.readFile(this.lockFile, 'utf-8');
+            if (content.trim() === String(process.pid)) {
+                await fs.unlink(this.lockFile);
+            }
+        } catch {
+            // Lock already released or doesn't exist — fine
+        }
+    }
 
-class KnowledgeGraphManager {
+    /**
+     * Load the graph from disk.
+     * @param {string} [context='default']
+     * @returns {Promise<Graph>}
+     */
     async loadGraph(context = 'default') {
-        const filePath = getFilePath(context);
+        const ctx = validateContext(context);
+        const filePath = this.getFilePath(ctx);
         try {
             const data = await fs.readFile(filePath, 'utf-8');
             const lines = data.split('\n').filter(line => line.trim() !== '');
-            
+
             if (lines.length === 0) return { entities: [], relations: [] };
 
-            // Version Check
+            // Version check (first line is header)
             try {
                 const header = JSON.parse(lines[0]);
-                // v1.0.0 to v1.1.0 migration logic could go here
                 if (header.version === '1.0.0') {
                     console.warn('[UKS] Upgrading graph from v1.0.0 to v1.1.0 (Adding UUIDs)...');
-                    // We will handle migration in memory and save back later
                 }
-            } catch(e) {}
+            } catch {
+                // Not a valid header — continue
+            }
 
             return lines.reduce((graph, line) => {
                 try {
                     const item = JSON.parse(line);
                     if (item.type === 'entity') {
-                        // Migration: If no ID, generate one based on name hash (deterministic for stability)
                         if (!item.id) {
                             item.id = crypto.createHash('md5').update(item.name).digest('hex');
                         }
                         graph.entities.push(item);
                     }
                     if (item.type === 'relation') {
-                        // Migration: If relations rely on names, we keep them for now, but v1.1 should prefer IDs
                         graph.relations.push(item);
                     }
-                } catch (e) { /* ignore */ }
+                } catch {
+                    // Skip malformed lines
+                }
                 return graph;
             }, { entities: [], relations: [] });
         } catch (error) {
-            if (error.code === 'ENOENT') return { entities: [], relations: [] };
-            throw error;
+            if (/** @type {NodeJS.ErrnoException} */ (error).code === 'ENOENT') {
+                return { entities: [], relations: [] };
+            }
+            throw new StorageError(
+                `Failed to load graph: ${/** @type {Error} */ (error).message}`,
+                { context: ctx, path: filePath }
+            );
         }
     }
 
-    // Batch Operation (Transaction-like)
+    /**
+     * Execute a batch update on the graph atomically.
+     * Acquires a lock, loads the graph, runs the updater, creates a backup, and saves.
+     *
+     * @param {(graph: Graph) => void | Promise<void>} updaterFn
+     * @param {string} [context='default']
+     * @returns {Promise<void>}
+     */
     async updateGraph(updaterFn, context = 'default') {
-        // Acquire lock for the whole batch
-        if (!await acquireLock()) {
-            throw new Error('Failed to acquire lock: Graph is busy.');
+        const ctx = validateContext(context);
+        if (!await this.acquireLock()) {
+            throw new LockError('Failed to acquire lock: Graph is busy.', { context: ctx });
         }
 
         try {
-            const graph = await this.loadGraph(context); // Load current state (internal method, bypassing lock)
-            
-            // Execute updater function which modifies the graph object directly
-            // updaterFn(graph) -> void or Promise<void>
+            const graph = await this.loadGraph(ctx);
             await updaterFn(graph);
 
-            // Save once (Backup happens here)
-            // Backup before write! (Reversibility)
-            await backupMgr.createSnapshot(context);
+            // Backup before overwriting
+            await this.backupMgr.createSnapshot(ctx);
 
-            const filePath = getFilePath(context);
+            const filePath = this.getFilePath(ctx);
             const lines = [
-                JSON.stringify(FILE_MARKER),
+                JSON.stringify(this.fileMarker),
                 ...graph.entities.map(e => JSON.stringify({ ...e, type: 'entity' })),
                 ...graph.relations.map(r => JSON.stringify({ ...r, type: 'relation' }))
             ];
             await fs.writeFile(filePath, lines.join('\n'));
         } finally {
-            await releaseLock();
+            await this.releaseLock();
         }
     }
 
-    // New: Undo
+    /**
+     * Undo the last graph change by restoring from backup.
+     * @param {string} [context='default']
+     * @returns {Promise<string|null>}
+     */
     async undo(context = 'default') {
-        if (!await acquireLock()) {
-            throw new Error('Failed to acquire lock: Graph is busy.');
+        const ctx = validateContext(context);
+        if (!await this.acquireLock()) {
+            throw new LockError('Failed to acquire lock: Graph is busy.', { context: ctx });
         }
         try {
-            const restoredFile = await backupMgr.restoreLatest(context);
-            return restoredFile;
+            return await this.backupMgr.restoreLatest(ctx);
         } finally {
-            await releaseLock();
+            await this.releaseLock();
         }
     }
 
+    /**
+     * Add or merge an entity into the graph.
+     *
+     * If an entity with the same name exists, observations are merged.
+     * Otherwise a new entity with a URN ID is created.
+     *
+     * @param {object} entity
+     * @param {string} entity.name
+     * @param {string} [entity.entityType='Concept']
+     * @param {string[]} [entity.observations]
+     * @param {string} [context='default']
+     * @returns {Promise<string>} The entity's ID
+     */
     async addEntity(entity, context = 'default') {
-        // Wrapper for single entity add using updateGraph
+        sanitizeString(entity.name, 'entity.name', 500);
+        const observations = validateObservations(entity.observations);
+
         let entityId;
         await this.updateGraph((graph) => {
             const existing = graph.entities.find(e => e.name === entity.name);
-            const inputObs = entity.observations || [];
-            
+
             if (existing) {
                 const existingObs = existing.observations || [];
-                const newObs = inputObs.filter(o => !existingObs.includes(o));
+                const newObs = observations.filter(o => !existingObs.includes(o));
                 existing.observations = [...existingObs, ...newObs];
                 entityId = existing.id;
             } else {
-                // Generate URN ID: urn:uks:local:<flavor>:<uuid>
                 const flavor = (entity.entityType || 'Concept').toLowerCase();
                 const cleanFlavor = flavor.replace(/[^a-z0-9-]/g, '');
                 const uuid = crypto.randomUUID();
                 const newId = `urn:uks:local:${cleanFlavor}:${uuid}`;
-                
-                const newEntity = {
+
+                graph.entities.push({
                     id: newId,
                     name: entity.name,
                     entityType: entity.entityType || 'Concept',
-                    observations: inputObs
-                };
-                graph.entities.push(newEntity);
+                    observations
+                });
                 entityId = newId;
             }
         }, context);
-        return entityId;
+        return /** @type {string} */ (entityId);
     }
 
+    /**
+     * Add a directional relation between two entities.
+     *
+     * @param {object} relation
+     * @param {string} relation.from - Source entity name or ID
+     * @param {string} relation.to - Target entity name or ID
+     * @param {string} relation.relationType - Type of the relation (e.g., 'depends_on')
+     * @param {string} [context='default']
+     * @returns {Promise<boolean>}
+     */
     async addRelation(relation, context = 'default') {
-        // Wrapper for single relation add using updateGraph
+        sanitizeString(relation.from, 'relation.from', 500);
+        sanitizeString(relation.to, 'relation.to', 500);
+        requireString(relation.relationType, 'relation.relationType');
+
         await this.updateGraph((graph) => {
-            // Resolve Names to IDs
             const fromEntity = graph.entities.find(e => e.name === relation.from || e.id === relation.from);
             const toEntity = graph.entities.find(e => e.name === relation.to || e.id === relation.to);
-    
+
             if (!fromEntity || !toEntity) {
-                throw new Error(`Cannot link: Entities not found ('${relation.from}' or '${relation.to}')`);
+                throw new NotFoundError(
+                    `Cannot link: Entity not found ('${relation.from}' or '${relation.to}')`,
+                    { from: relation.from, to: relation.to }
+                );
             }
-    
-            // Check duplicates (using IDs now)
-            const exists = graph.relations.some(r => 
-                r.fromId === fromEntity.id && 
-                r.toId === toEntity.id && 
+
+            const exists = graph.relations.some(r =>
+                r.fromId === fromEntity.id &&
+                r.toId === toEntity.id &&
                 r.relationType === relation.relationType
             );
-    
+
             if (!exists) {
                 graph.relations.push({
                     fromId: fromEntity.id,
@@ -200,74 +351,41 @@ class KnowledgeGraphManager {
         return true;
     }
 
+    /**
+     * Search the graph by keyword match.
+     *
+     * NOTE: Semantic (vector) search is handled by VectorManager.
+     * This method performs keyword-only search.
+     *
+     * @param {string} query
+     * @param {object} [options]
+     * @param {string} [context='default']
+     * @returns {Promise<{entities: Entity[], relations: Relation[], metadata: object}>}
+     */
     async search(query, options = {}, context = 'default') {
+        requireString(query, 'query');
         const graph = await this.loadGraph(context);
-        
-        if (options.semantic) {
-            console.error('Using semantic search (Prototype via @xenova/transformers)...');
-            const { pipeline } = await import('@xenova/transformers');
-            const pipe = await pipeline('feature-extraction', 'Xenova/all-MiniLM-L6-v2');
-            
-            // Helper: Cosine Similarity
-            const cosineSim = (a, b) => {
-                let dotProduct = 0;
-                let normA = 0;
-                let normB = 0;
-                for (let i = 0; i < a.length; i++) {
-                    dotProduct += a[i] * b[i];
-                    normA += a[i] * a[i];
-                    normB += b[i] * b[i];
-                }
-                return dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
-            };
 
-            // 1. Embed Query
-            const queryOutput = await pipe(query, { pooling: 'mean', normalize: true });
-            const queryEmb = queryOutput.data;
+        const q = query.toLowerCase();
+        const entities = graph.entities.filter(e =>
+            e.name.toLowerCase().includes(q) ||
+            (e.observations || []).some(o => o.toLowerCase().includes(q))
+        );
 
-            // 2. Embed & Score Entities (In-Memory for Prototype - slow for large graphs!)
-            const scoredEntities = [];
-            
-            // Use Promise.all for parallel embedding if possible, but transformers.js is single-threaded in node mostly
-            for (const entity of graph.entities) {
-                // Combine name + observations into a single text blob
-                const text = `${entity.name}. ${entity.observations.join('. ')}`;
-                const entityOutput = await pipe(text, { pooling: 'mean', normalize: true });
-                const entityEmb = entityOutput.data;
-                
-                const score = cosineSim(queryEmb, entityEmb);
-                if (score > 0.25) { // Threshold
-                    scoredEntities.push({ ...entity, score });
-                }
-            }
+        const ids = new Set(entities.map(e => e.id));
+        const relations = graph.relations.filter(r => ids.has(r.fromId) || ids.has(r.toId));
 
-            // Sort by score desc
-            scoredEntities.sort((a, b) => b.score - a.score);
-            
-            const entities = scoredEntities.slice(0, 5); // Top 5
-            const ids = new Set(entities.map(e => e.id));
-            const relations = graph.relations.filter(r => ids.has(r.fromId) || ids.has(r.toId));
-            
-            return { entities, relations, metadata: { mode: 'semantic', model: 'all-MiniLM-L6-v2' } };
-
-        } else {
-            // Traditional Keyword Search
-            const q = query.toLowerCase();
-            const entities = graph.entities.filter(e => 
-                e.name.toLowerCase().includes(q) || 
-                e.observations.some(o => o.toLowerCase().includes(q))
-            );
-            
-            const ids = new Set(entities.map(e => e.id));
-            const relations = graph.relations.filter(r => ids.has(r.fromId) || ids.has(r.toId));
-            
-            return { entities, relations, metadata: { mode: 'keyword' } };
-        }
+        return { entities, relations, metadata: { mode: 'keyword' } };
     }
-    
+
+    /**
+     * Get all entities and relations from the graph.
+     * @param {string} [context='default']
+     * @returns {Promise<Graph>}
+     */
     async getAll(context = 'default') {
         return await this.loadGraph(context);
     }
 }
 
-module.exports = new KnowledgeGraphManager();
+module.exports = { KnowledgeGraphManager };

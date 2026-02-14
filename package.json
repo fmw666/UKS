@@ -1,16 +1,27 @@
 {
-  "name": "uks-monorepo",
-  "version": "0.2.0",
-  "private": true,
-  "description": "Monorepo for UKS (Umai Knowledge Standard)",
-  "workspaces": [
-    "packages/*"
-  ],
-  "scripts": {
-    "test": "npm test --workspaces --if-present",
-    "lint": "node scripts/lint.js",
-    "e2e": "node scripts/audit.js"
-  },
-  "author": "Xiao Fan Ge",
-  "license": "MIT"
+     "name": "uks-monorepo",
+     "version": "1.0.0",
+     "private": true,
+     "description": "Monorepo for UKS (Umai Knowledge Standard)",
+     "workspaces": [
+          "packages/*"
+     ],
+     "scripts": {
+          "test": "npm test --workspaces --if-present",
+          "lint": "node scripts/lint.js",
+          "lint:eslint": "eslint packages/*/src packages/*/index.js packages/*/drivers.js --ext .js",
+          "format": "prettier --write .",
+          "format:check": "prettier --check .",
+          "e2e": "node scripts/audit.js",
+          "cli": "node packages/cli/index.js",
+          "viewer": "node scripts/serve-viewer.js",
+          "version:sync": "node scripts/sync-version.js",
+          "version:set": "node scripts/sync-version.js"
+     },
+     "devDependencies": {
+          "eslint": "^8.57.0",
+          "prettier": "^3.2.0"
+     },
+     "author": "Xiao Fan Ge",
+     "license": "MIT"
 }

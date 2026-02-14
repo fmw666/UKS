@@ -1,12 +1,14 @@
 {
-  "name": "@uks/viewer",
-  "version": "0.1.0",
-  "description": "Web visualizer for UKS Knowledge Graph",
-  "main": "server.js",
-  "scripts": {
-    "start": "node server.js"
-  },
-  "dependencies": {
-    "express": "^4.22.1"
-  }
+     "name": "@uks/viewer",
+     "version": "1.0.0",
+     "description": "Web visualizer for UKS Knowledge Graph",
+     "main": "server.js",
+     "scripts": {
+          "start": "node server.js"
+     },
+     "author": "Xiao Fan Ge",
+     "license": "MIT",
+     "dependencies": {
+          "express": "^4.22.1"
+     }
 }
