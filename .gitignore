@@ -1,7 +1,7 @@
-node_modules
-.env
+node_modules/
 .DS_Store
-dist
-coverage
-.northstar
-.aim
+.backups/
+test/test_data/
+test/dogfood_temp/
+*.log
+.lock
