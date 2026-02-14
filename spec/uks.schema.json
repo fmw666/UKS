@@ -68,5 +68,52 @@
         "required": ["name"]
       }
     }
-  }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "flavor": { "const": "Tool" } } },
+      "then": {
+        "properties": {
+          "nutrition": {
+            "type": "object",
+            "required": ["language"],
+            "properties": {
+              "language": { "type": "string" },
+              "version": { "type": "string" },
+              "license": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": { "properties": { "flavor": { "const": "Person" } } },
+      "then": {
+        "properties": {
+          "nutrition": {
+            "type": "object",
+            "required": ["role"],
+            "properties": {
+              "role": { "type": "string" },
+              "email": { "type": "string", "format": "email" }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": { "properties": { "flavor": { "const": "Protocol" } } },
+      "then": {
+        "properties": {
+          "nutrition": {
+            "type": "object",
+            "required": ["steps"],
+            "properties": {
+              "steps": { "type": "array", "items": { "type": "string" } }
+            }
+          }
+        }
+      }
+    }
+  ]
 }

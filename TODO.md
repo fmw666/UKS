@@ -1,33 +1,45 @@
-# UKS v1.3.0 Roadmap (The Junjie Upgrade) 🔥
+# UKS v0.2.0 Roadmap (The Junjie Upgrade) 🍱🔥
 
-Driven by feedback from Little Junjie.
+> **Target:** Transform UKS from a Geek's Toy to an Engineer's Tool.
+> **Driven by:** Little Junjie's Critique (2026-02-14).
 
-## Phase 1: Standardization (Schema)
-- [x] **JSON Schema Definition**
-    - Create `spec/uks.schema.json` defining the "Bento Box" structure (title, flavor, nutrition, ingredients).
-    - Ensure strict typing for `entityType` and `observations`.
-- [x] **IDE Integration**
-    - Create `.vscode/settings.json` to auto-link the schema to `*.bento.json` or `knowledge/**/*.json`.
-- [x] **CLI Validation**
-    - Upgrade `ingest` command to validate JSON against the schema before importing.
+## 🛡️ Phase 1: Ontological Formalization (Schema-First)
+*Goal: Eliminate "any" types and enforce strict structural contracts.*
 
-## Phase 2: Intelligence (Vector)
-- [x] **Embedding Research**
-    - Evaluate `xenova/transformers` (local execution) vs API.
-- [x] **Search Upgrade**
-    - Implement `uks search --semantic <query>` (Prototype).
-    - Added `@xenova/transformers` for local embeddings.
-    - Updated `ingest` to capture `observations` array from JSON.
+- [x] **Implement JSON Schema / TypeBox Validation**
+  - Define strict schemas for `nutrition` based on `flavor`.
+  - Integrate runtime validation into `uks ingest`.
+- [ ] **Adopt IRI/URN Identifiers**
+  - Deprecate raw filenames as IDs.
+  - Implement `urn:uks:<namespace>:<category>:<id>` standard.
 
-## Phase 3: Visibility (UI)
-- [x] **Web Visualizer**
-    - Create `packages/viewer` or `uks serve` command.
-    - Render `graph-default.jsonl` using a simple force-directed graph (D3/Cytoscape).
+## 🧠 Phase 2: Neuro-Symbolic Retrieval (The Brain)
+*Goal: Beyond keyword matching. Semantic understanding + Structural precision.*
 
-## Phase 4: Extensibility (Plugin)
-- [ ] **Plugin Architecture**
-    - Design `packages/core` to support external ingestors (e.g., Python class extractor).
-    - Implement dynamic loader for `uks-plugin-*`.
+- [ ] **Integrate Vector Database**
+  - Evaluate: LanceDB (Embedded) vs Chroma (Local).
+  - Implement `uks embed`: Auto-generate embeddings.
+- [ ] **Hybrid Search Command**
+  - Upgrade `uks search` to support `--semantic`.
+  - Implement RAG pipeline: Graph Traversal + Vector Similarity.
+
+## 💾 Phase 3: Storage Abstraction (Cloud-Ready)
+*Goal: Break free from the local filesystem.*
+
+- [ ] **Design Driver Interface (SAL)**
+  - Define `StorageDriver` interface: `read()`, `write()`, `list()`.
+- [ ] **Implement Drivers**
+  - `S3Driver` (AWS/MinIO support).
+  - `GitDriver` (Version controlled knowledge).
+
+## 🔌 Phase 4: Ecosystem & Interoperability
+*Goal: Speak the universal language of Agents.*
+
+- [ ] **Develop `uks-mcp-server`** 🚀
+  - Implement Model Context Protocol (MCP) interface.
+  - Allow Claude/ChatGPT to mount UKS as a native tool resource.
+- [ ] **CI/CD Integration**
+  - Create GitHub Action `uks-validate-action`.
 
 ---
 *Maintained by Auto-Dev Cron* 🤖

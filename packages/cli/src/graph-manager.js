@@ -2,6 +2,7 @@ const fs = require('fs').promises;
 const path = require('path');
 const { existsSync } = require('fs');
 const crypto = require('crypto'); // Native UUID
+const { pipeline } = require('@xenova/transformers');
 
 const config = require('./config');
 const BackupManager = require('./backup-manager'); // New
@@ -195,20 +196,69 @@ class KnowledgeGraphManager {
         return true;
     }
 
-    async search(query, context = 'default') {
+    async search(query, options = {}, context = 'default') {
         const graph = await this.loadGraph(context);
-        const q = query.toLowerCase();
         
-        const entities = graph.entities.filter(e => 
-            e.name.toLowerCase().includes(q) || 
-            e.observations.some(o => o.toLowerCase().includes(q))
-        );
-        
-        // Find relations connecting these entities (by ID)
-        const ids = new Set(entities.map(e => e.id));
-        const relations = graph.relations.filter(r => ids.has(r.fromId) || ids.has(r.toId));
-        
-        return { entities, relations };
+        if (options.semantic) {
+            console.error('Using semantic search (Prototype via @xenova/transformers)...');
+            // Lazy load the pipeline
+            const pipe = await pipeline('feature-extraction', 'Xenova/all-MiniLM-L6-v2');
+            
+            // Helper: Cosine Similarity
+            const cosineSim = (a, b) => {
+                let dotProduct = 0;
+                let normA = 0;
+                let normB = 0;
+                for (let i = 0; i < a.length; i++) {
+                    dotProduct += a[i] * b[i];
+                    normA += a[i] * a[i];
+                    normB += b[i] * b[i];
+                }
+                return dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
+            };
+
+            // 1. Embed Query
+            const queryOutput = await pipe(query, { pooling: 'mean', normalize: true });
+            const queryEmb = queryOutput.data;
+
+            // 2. Embed & Score Entities (In-Memory for Prototype - slow for large graphs!)
+            const scoredEntities = [];
+            
+            // Use Promise.all for parallel embedding if possible, but transformers.js is single-threaded in node mostly
+            for (const entity of graph.entities) {
+                // Combine name + observations into a single text blob
+                const text = `${entity.name}. ${entity.observations.join('. ')}`;
+                const entityOutput = await pipe(text, { pooling: 'mean', normalize: true });
+                const entityEmb = entityOutput.data;
+                
+                const score = cosineSim(queryEmb, entityEmb);
+                if (score > 0.25) { // Threshold
+                    scoredEntities.push({ ...entity, score });
+                }
+            }
+
+            // Sort by score desc
+            scoredEntities.sort((a, b) => b.score - a.score);
+            
+            const entities = scoredEntities.slice(0, 5); // Top 5
+            const ids = new Set(entities.map(e => e.id));
+            const relations = graph.relations.filter(r => ids.has(r.fromId) || ids.has(r.toId));
+            
+            return { entities, relations, metadata: { mode: 'semantic', model: 'all-MiniLM-L6-v2' } };
+
+        } else {
+            // Traditional Keyword Search
+            const q = query.toLowerCase();
+            const entities = graph.entities.filter(e => 
+                e.name.toLowerCase().includes(q) || 
+                e.observations.some(o => o.toLowerCase().includes(q))
+            );
+            
+            const ids = new Set(entities.map(e => e.id));
+            const relations = graph.relations.filter(r => ids.has(r.fromId) || ids.has(r.toId));
+            
+            return { entities, relations, metadata: { mode: 'keyword' } };
+        }
     }
     
     async getAll(context = 'default') {

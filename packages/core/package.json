@@ -1,0 +1,19 @@
+{
+  "name": "@uks/core",
+  "version": "0.1.0",
+  "description": "Core plugin system and shared utilities for UKS",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "uks",
+    "knowledge-graph",
+    "plugin"
+  ],
+  "author": "The Flame Architect",
+  "license": "MIT",
+  "dependencies": {
+    "glob": "^13.0.3"
+  }
+}

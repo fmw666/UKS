@@ -5,6 +5,7 @@ const jsonpath = require('jsonpath'); // Flexible extraction
 const graphManager = require('./graph-manager');
 const crypto = require('crypto'); // Need for ID generation inside batch
 const Ajv = require('ajv');
+const { PluginManager } = require('@uks/core');
 
 // Load Schema
 const SCHEMA_PATH = path.resolve(__dirname, '../../../spec/uks.schema.json');
@@ -21,6 +22,13 @@ try {
 }
 
 class IngestManager {
+    constructor() {
+        this.pluginManager = PluginManager; // Singleton from core
+        // Load plugins from local node_modules (if any)
+        // In a real CLI, we might check global modules or a specific config
+        // this.pluginManager.loadPlugins(path.resolve(__dirname, '../node_modules'));
+    }
+
     /**
      * Ingest JSON files matching the pattern.
      * @param {string} pattern - Glob pattern
@@ -60,7 +68,36 @@ class IngestManager {
         for (const file of files) {
             try {
                 const content = await fs.readFile(file, 'utf-8');
-                const data = JSON.parse(content);
+                let data = null;
+                let isPluginHandled = false;
+
+                // Plugin Check
+                const plugins = this.pluginManager.getIngestPlugins();
+                for (const plugin of plugins) {
+                    if (plugin.canHandle(file)) {
+                        const result = await plugin.ingest(file, content);
+                        // Plugins should return standard Bento Box JSON structure
+                        // Or { entities: [], relations: [] } - simplified
+                        if (result) {
+                            data = result; // Assume plugin returns compatible JSON structure
+                            isPluginHandled = true;
+                            break;
+                        }
+                    }
+                }
+
+                if (!isPluginHandled) {
+                    // Default JSON Handler
+                    if (path.extname(file) === '.json') {
+                        data = JSON.parse(content);
+                    } else {
+                        // Skip non-JSON if not handled by plugin
+                        continue;
+                    }
+                }
+
+                if (!data) continue;
+
                 const filename = path.basename(file, path.extname(file));
 
                 // 0. Schema Validation (New in v1.3)
@@ -99,6 +136,9 @@ class IngestManager {
 
                 // Add source/version obs
                 if (data.version) observations.push(`v${data.version}`);
+                if (Array.isArray(data.observations)) {
+                    observations.push(...data.observations);
+                }
                 
                 if (options.dryRun) {
                     report.preview.push({
