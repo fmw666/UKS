@@ -1,6 +1,7 @@
 const config = require('./src/config');
 const graphManager = require('./src/graph-manager');
 const ingestManager = require('./src/ingest-manager');
+const vectorManager = require('./src/vector-manager'); // Vector
 const { program } = require('commander');
 
 // Config Command
@@ -41,7 +42,20 @@ program
         }
     });
 
-// Undo Command (New)
+// Search Command (Upgraded)
+program
+    .command('search <query>')
+    .description('Search the knowledge graph (supports --semantic)')
+    .option('--semantic', 'Use semantic vector search')
+    .action(async (query, options) => {
+        if (options.semantic) {
+            const results = await vectorManager.search(query);
+            console.log(JSON.stringify({ type: 'semantic', results }, null, 2));
+        } else {
+            const result = await graphManager.search(query);
+            console.log(JSON.stringify(result, null, 2));
+        }
+    });
 program
     .command('undo')
     .description('Revert graph to the last saved state')
