@@ -1,62 +1,82 @@
-# UKS Bootcamp: How to Index & Structure 🏫
+# UKS Tutorial (v1.2.0) 🔥
 
-> *"Don't just store data. Build a brain."*
+Welcome to the **Umai Knowledge Standard**!
 
-## 1. Directory Structure (The Kitchen)
-Keep your knowledge organized by domain.
-**Recommended Layout:**
+## 1. Concepts
+- **Bento Box (JSON):** The atomic unit of knowledge (dense, structured).
+- **Knowledge Graph (JSONL):** The interconnected network of Bentos (Entities & Relations).
+- **Ingest (Bot):** The act of consuming raw JSON files into the graph.
 
-```text
-knowledge/
-├── meta/               # Protocols, Standards (e.g., knowledge_system.json)
-├── tech/               # Technologies (e.g., node/, python/, docker/)
-├── architecture/       # Patterns (e.g., ddd/, microservices/)
-├── business/           # Domain logic (e.g., user_management/, billing/)
-└── graph/              # (Generated) graph-default.jsonl
+## 2. CLI Usage (uks)
+
+### Configuration (New!)
+Set your global storage path once, and forget it.
+```bash
+# Set path
+uks config storagePath ./my_knowledge_graph
+
+# Check value (by looking at ~/.uksrc or similar)
+# (Currently no 'get' command, but 'set' persists it)
 ```
 
-## 2. Creating a Knowledge Asset (Cooking)
+### Adding Knowledge (Manual)
+Great for quick notes or corrections.
+```bash
+# Add an entity with tags (observations)
+uks add-entity "Redis" "Database" -o "Cache,KV-Store"
 
-### Step 1: Identify the Concept
-- Is it a **Tool**? (e.g., Docker)
-- Is it a **Pattern**? (e.g., Singleton)
-- Is it a **Principle**? (e.g., DRY)
+# Link two entities
+uks link "Redis" "supports" "HighConcurrency"
+```
 
-### Step 2: Create the JSON File
-Use the **Snake Case** naming convention: `knowledge/architecture/singleton_pattern.json`.
-Copy this template:
+### Ingesting Files (Bulk) (New!)
+The power move for AI Agents. Import existing JSON knowledge bases.
 
+**Basic Usage:**
+```bash
+# Dry Run (Preview what will happen)
+uks ingest "knowledge/**/*.json" --dry-run
+
+# Real Run
+uks ingest "knowledge/**/*.json"
+```
+
+**Advanced Usage (Mapping):**
+You can customize how JSON fields map to graph entities.
+Create `map.json`:
 ```json
 {
-  "dish": "Singleton Pattern",
-  "flavor": "Pattern",
-  "taste_notes": "Ensure a class has only one instance and provide a global point of access to it.",
-  "ingredients": [
-    "object_oriented_programming",  // Link to other concepts!
-    "global_state"
-  ],
-  "nutrition": {
-    "implementation": "private static instance...",
-    "pros": ["Controlled access"],
-    "cons": ["Hard to test", "Hidden dependencies"]
-  }
+  "entityName": "$.meta.slug",
+  "relations": [
+    { "path": "$.deps[*].id", "type": "depends_on" }
+  ]
 }
 ```
-
-### Step 3: Indexing into the Graph (Serving)
-Once the file is saved, you must **tell the Graph Engine** about it.
-
-**Command:**
+Run:
 ```bash
-# Add the entity
-node skills/knowledge-graph/index.js add-entity "Singleton Pattern" "Pattern" -o "One instance rule"
-
-# Add relationships (The most important part!)
-node skills/knowledge-graph/index.js link "Singleton Pattern" "implements" "Object Oriented Programming"
-node skills/knowledge-graph/index.js link "Database Connection" "uses" "Singleton Pattern"
+uks ingest "data/*.json" --map map.json
 ```
 
-## 3. The Feedback Loop
-1.  **Read:** When user asks about "Database", search the graph: `search "Database"`.
-2.  **Discover:** Graph returns `Singleton Pattern` as a dependency.
-3.  **Synthesize:** Explain Database using the Singleton context.
+### Safety Net (Undo) (New!)
+Made a mistake? Don't panic.
+```bash
+# Revert the last write operation
+uks undo
+
+# Output: ✅ Reverted to backup: ...
+```
+
+### Querying
+Find what you need.
+```bash
+# Search by name or tag
+uks search "Cache"
+```
+
+## 3. Best Practices
+- **Atomic Commits:** Always use `ingest` for large updates to ensure consistency.
+- **Structured Tags:** Use `observations` for keywords like "v1.0", "Source:GitHub".
+- **Audit Regularly:** Run `node scripts/audit.js` to ensure graph health.
+
+---
+*Updated: 2026-02-14*
