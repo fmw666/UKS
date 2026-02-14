@@ -4,7 +4,7 @@
   "description": "Core plugin system and shared utilities for UKS",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "node test/drivers.test.js"
   },
   "keywords": [
     "uks",

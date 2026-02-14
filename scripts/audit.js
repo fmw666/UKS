@@ -15,6 +15,7 @@ try {
 }
 
 const CLI_ROOT = path.resolve(__dirname, '../packages/cli');
+const CORE_ROOT = path.resolve(__dirname, '../packages/core');
 const CLI_BIN = path.resolve(CLI_ROOT, 'index.js');
 const GRAPH_FILE = process.env.UKS_GRAPH_FILE || path.resolve(__dirname, '../../knowledge/uks_graph/graph-default.jsonl');
 const TEMP_DATA = path.resolve(CLI_ROOT, 'test/dogfood_temp');
@@ -40,11 +41,19 @@ async function runAudit() {
 
         // --- PHASE 1: UNIT TEST AUDIT ---
         try {
-            log('Unit Tests', 'running', 'npm test...');
-            execSync('npm test', { cwd: CLI_ROOT, stdio: 'pipe' }); // Capture output
-            log('Unit Tests', 'success', 'All tests passed via `npm test`');
+            log('Core Tests', 'running', 'npm test (packages/core)...');
+            execSync('npm test', { cwd: CORE_ROOT, stdio: 'pipe' }); 
+            log('Core Tests', 'success', 'Core drivers verified');
         } catch (e) {
-            log('Unit Tests', 'error', `Failed: ${e.stdout?.toString() || e.message}`);
+            log('Core Tests', 'error', `Failed: ${e.stdout?.toString() || e.message}`);
+        }
+
+        try {
+            log('CLI Tests', 'running', 'npm test (packages/cli)...');
+            execSync('npm test', { cwd: CLI_ROOT, stdio: 'pipe' }); // Capture output
+            log('CLI Tests', 'success', 'All tests passed via `npm test`');
+        } catch (e) {
+            log('CLI Tests', 'error', `Failed: ${e.stdout?.toString() || e.message}`);
         }
 
         // --- PHASE 2: FUNCTIONAL AUDIT (E2E SCENARIO) ---

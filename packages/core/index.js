@@ -149,5 +149,6 @@ module.exports = {
     Plugin,
     IngestPlugin,
     StorageDriver,
-    PluginManager: new PluginManager()
+    PluginManager: new PluginManager(),
+    ...require('./drivers')
 };

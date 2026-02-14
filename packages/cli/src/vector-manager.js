@@ -1,4 +1,3 @@
-const { pipeline } = require('@xenova/transformers');
 const fs = require('fs').promises;
 const path = require('path');
 const config = require('./config');
@@ -16,11 +15,14 @@ class VectorManager {
 
     async init() {
         if (!this.pipeline) {
-            // Only log if not in a "silent" mode or maybe check if stdout is TTY?
-            // For now, let's silence it to avoid breaking JSON consumers, or use stderr.
-            // console.error('🔌 Initializing Feature Extraction Pipeline (Xenova/all-MiniLM-L6-v2)...'); 
-            // Lazy load model (download on first run)
-            this.pipeline = await pipeline('feature-extraction', 'Xenova/all-MiniLM-L6-v2');
+            try {
+                // Dynamic import to avoid load-time errors in environments without ONNX support
+                const { pipeline } = require('@xenova/transformers');
+                // console.error('🔌 Initializing Feature Extraction Pipeline (Xenova/all-MiniLM-L6-v2)...'); 
+                this.pipeline = await pipeline('feature-extraction', 'Xenova/all-MiniLM-L6-v2');
+            } catch (e) {
+                console.warn('[VectorManager] Failed to load transformers. Semantic search disabled.', e.message);
+            }
         }
         if (!this.loaded) {
             await this.loadVectors();
