@@ -1,0 +1,11 @@
+{
+    "json.schemas": [
+        {
+            "fileMatch": [
+                "knowledge/**/*.json",
+                "*.bento.json"
+            ],
+            "url": "./spec/uks.schema.json"
+        }
+    ]
+}
