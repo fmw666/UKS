@@ -1,0 +1,12 @@
+{
+  "compilerOptions": {
+    "module": "commonjs",
+    "target": "es2020",
+    "baseUrl": ".",
+    "paths": {
+      "@uks/core": ["packages/core/index.js"],
+      "@uks/cli": ["packages/cli/index.js"]
+    }
+  },
+  "exclude": ["node_modules", "dist"]
+}

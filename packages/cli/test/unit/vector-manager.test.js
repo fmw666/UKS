@@ -1,5 +1,5 @@
 const assert = require('assert');
-const { VectorManager: vectorManager } = require('../../../../packages/core'); // Adjust path to core
+const { VectorManager: vectorManager } = require('@uks/core'); // Clean alias
 
 // Mock Data
 const vecA = [1, 0, 0];

@@ -16,7 +16,7 @@ fs.mkdirSync(TEST_DIR);
 console.log('🔥 [Test] Environment Setup: ' + TEST_DIR);
 
 // 2. Load Module (Post-Env Setup)
-const { GraphManager: graphManager } = require('../../../packages/core'); // Adjust path to core
+const { GraphManager: graphManager } = require('@uks/core'); // Clean alias
 
 async function runTests() {
     try {

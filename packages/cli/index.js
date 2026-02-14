@@ -2,13 +2,13 @@ const {
     GraphManager: graphManager, 
     IngestManager: ingestManager, 
     VectorManager: vectorManager,
-} = require('../core'); 
+} = require('@uks/core'); 
 
 // Config logic is now in core too, but CLI needs to set it.
 // We can expose a ConfigManager from core.
 // For MVP, let's assume the managers internally use the core config.
 // But we need to set 'config' for the CLI command 'uks config set ...'
-const config = require('../core/src/config'); 
+const config = require('../core/src/config'); // Keep relative for internal src access or expose via index
 
 const { program } = require('commander');
 
