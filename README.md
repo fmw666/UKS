@@ -1,51 +1,60 @@
-# UKS (Umai Knowledge Standard) 🔥
-The "Bento Box" for AI Knowledge Management.
+# UKS (Umai Knowledge Standard) 🍱🔥
+
+> **"Umai!" (Delicious!)** — *Kyojuro Rengoku*
+
+The **Bento Box** for AI Knowledge Management. A high-density, nutritious standard for feeding Knowledge Graphs to AI Agents.
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![Version](https://img.shields.io/badge/version-v0.2.0-red)
+![Taste](https://img.shields.io/badge/taste-Delicious-orange)
 
-## What is UKS?
-UKS is a standard for organizing knowledge so that both **Humans** (Architecture Docs) and **AI Agents** (Knowledge Graphs) can consume it efficiently.
+## 🍱 What is UKS?
+Most documentation is like a messy buffet — hard for AI to digest.
+**UKS** packs knowledge into **Bento Boxes**: structured, schema-validated JSON units that are high in "Information Density" (Nutrition) and low in token waste.
 
-## Core Philosophy
-1. **AI-First:** Assets are JSON/Schema, not prose.
-2. **Density:** Maximize info/token ratio.
-3. **Graph-Based:** Evolution from Folder Tree -> Knowledge Graph.
+It serves two masters:
+1.  **Humans:** Who enjoy the architecture and clarity.
+2.  **AI Agents:** Who devour the JSON schemas and Graph relations.
 
-## Quick Start (CLI)
+## 🔥 Core Philosophy (The Flame Breathing)
+1.  **AI-First (The Ingredients):** JSON/Schema over prose. Data must be machine-readable first.
+2.  **Density (Nutrition):** Maximize info/token ratio. Don't feed AI empty calories (fluff words).
+3.  **Graph-Based (The Menu):** Evolution from Folder Tree -> Knowledge Graph (Nodes & Edges).
+
+## 🥢 Quick Start (The Chopsticks)
 
 ```bash
 # Install (v0.2.0)
 ./install.sh
 
-# Initialize Config (New in v0.2.0)
+# Initialize Kitchen (Config)
 uks config storagePath ./knowledge/graph
 
-# Add Entity
+# Prepare a Dish (Add Entity)
 uks add-entity "NestJS" "Framework" -o "Backend,TypeScript"
 
-# Ingest Existing JSON Files (New in v0.2.0)
-# Supports glob patterns and JSONPath mapping!
+# Devour Existing Knowledge (Ingest)
+# Supports bulk consumption of JSON files!
 uks ingest "knowledge/**/*.json" --json
 
-# Made a mistake? Undo! (New in v0.2.0)
+# Regret that bite? (Undo)
 uks undo
 
-# Search
-uks search "Backend"
+# Find the flavor (Semantic Search)
+uks search "Backend" --semantic
 ```
 
-## Features (v0.2.0)
-- **Vector Search:** Semantic retrieval using local embeddings.
-- **Schema Validation:** Strict JSON Schema checks.
-- **Ingest:** Bulk import JSON files with flexible mapping.
-- **Undo:** Revert graph state to previous snapshot.
-- **Config:** Persistent configuration (no more env vars).
-- **Audit:** Built-in self-check script (`scripts/audit.js`).
+## 📜 Features (The Menu)
+- **🧠 Vector Intelligence:** Local embeddings (`@xenova/transformers`) give the system a sense of "taste" (Semantic Search).
+- **🛡️ Schema Validation:** Strict hygiene checks (`ajv`). No spoiled food allowed!
+- **📥 Ingest Engine:** Bulk import machinery.
+- **⏪ Time Reversal (Undo):** Atomic batch updates with rollback.
+- **⚔️ Nichirin Audit:** Built-in self-check script (`scripts/audit.js`) to ensure the blade is sharp.
 
 ## Documentation
-- [TUTORIAL.md](./TUTORIAL.md): Full guide for Humans & Bots.
-- [AI_PROTOCOL.md](./AI_PROTOCOL.md): How AI should interact with this repo.
+- [TUTORIAL.md](./TUTORIAL.md): How to cook and eat.
+- [AI_PROTOCOL.md](./AI_PROTOCOL.md): Table manners for AI Bots.
 
 ---
-*Maintainer: Xiao Fan Ge (The Flame Hashira)* 🔥
+*Maintained by Xiao Fan Ge (The Flame Hashira)* 🔥
+*"Set your heart ablaze!"*
