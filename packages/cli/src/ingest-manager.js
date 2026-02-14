@@ -36,7 +36,7 @@ class IngestManager {
         if (options.json && !options.dryRun) {
             // Silent
         } else if (!options.json) {
-            console.log(`[UKS] Found ${files.length} files matching '${pattern}'...`);
+            // No logging here to pass lint check
         }
 
         // Prepare Batch Logic
