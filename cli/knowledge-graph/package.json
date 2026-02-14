@@ -1,9 +1,0 @@
-{
-  "name": "knowledge-graph",
-  "version": "1.0.0",
-  "description": "Local Knowledge Graph based on mcp-knowledge-graph architecture.",
-  "main": "index.js",
-  "dependencies": {
-    "commander": "^11.0.0"
-  }
-}
