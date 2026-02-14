@@ -24,33 +24,28 @@ jobs:
       with:
         node-version: ${{ matrix.node-version }}
         cache: 'npm'
-        cache-dependency-path: packages/cli/package-lock.json
+        cache-dependency-path: package-lock.json
 
-    - name: Install Dependencies
-      run: |
-        cd packages/cli
-        npm ci
+    - name: Install Dependencies (Root)
+      run: npm ci
 
-    - name: 🧪 Unit Tests (The First Breath)
-      run: |
-        cd packages/cli
-        npm test
+    - name: 🧪 Run All Tests (Workspaces)
+      run: npm test
 
     - name: ⚔️ Audit E2E (The Continuous Training)
       # Run the exact same script we use locally!
       run: |
-        # Set up a fake environment for audit script
+        # Set up a fake environment for audit script if needed, or just run it.
+        # Audit script relies on relative paths, so running from root is fine if paths are correct.
         node scripts/audit.js
       env:
-        # Pass any secrets if needed (e.g., if audit script tries to notify Feishu, which it does)
-        # However, in CI, we might want to suppress external notifications or handle them differently.
-        # For now, let's assume audit.js handles missing Feishu gracefully (it does try/catch).
+        # Pass any secrets if needed
         CI: true
 
     - name: 🧹 Lint Check (The Discipline)
-      # Simple check: no console.log in src/ (except CLI entry points)
+      # Check both packages
       run: |
-        if grep -r "console.log" packages/cli/src --exclude="index.js"; then
+        if grep -r "console.log" packages/*/src --exclude="index.js"; then
           echo "❌ Forbidden console.log found in library code!"
           exit 1
         fi
