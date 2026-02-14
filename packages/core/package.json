@@ -2,7 +2,7 @@
   "name": "@uks/core",
   "version": "0.2.0",
   "description": "Core logic for UKS",
-  "main": "drivers.js",
+  "main": "index.js",
   "scripts": {
     "test": "node test/drivers.test.js"
   },

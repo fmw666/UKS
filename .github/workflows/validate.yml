@@ -1,0 +1,54 @@
+name: UKS Validation
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x, 22.x]
+
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+        cache-dependency-path: '**/package-lock.json'
+        
+    - name: Install Dependencies (Root)
+      run: npm install --workspaces --if-present
+      # If not using workspaces structure in root package.json, might need to install in each package
+      
+    - name: Install Dependencies (Core)
+      run: cd packages/core && npm ci
+      
+    - name: Install Dependencies (CLI)
+      run: cd packages/cli && npm ci
+      
+    - name: Install Dependencies (MCP)
+      run: cd packages/mcp-server && npm ci
+
+    - name: Test Core
+      run: cd packages/core && npm test
+
+    - name: Test CLI
+      run: cd packages/cli && npm test
+
+    - name: Verify MCP Server Build
+      run: |
+        cd packages/mcp-server
+        node -c index.js
+
+    - name: Run Nichirin Audit (Integration Test)
+      run: node scripts/audit.js
+      env:
+        CI: true

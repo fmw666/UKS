@@ -38,7 +38,7 @@
 - [x] **Develop `uks-mcp-server`** 🚀
   - Implement Model Context Protocol (MCP) interface.
   - Allow Claude/ChatGPT to mount UKS as a native tool resource.
-- [ ] **CI/CD Integration**
+- [x] **CI/CD Integration**
   - Create GitHub Action `uks-validate-action`.
 - [x] **Comprehensive Test Suite**
   - Add Unit Tests for Vector Manager (mock transformers).
