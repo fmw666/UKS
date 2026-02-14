@@ -9,7 +9,7 @@
 - [x] **Implement JSON Schema / TypeBox Validation**
   - Define strict schemas for `nutrition` based on `flavor`.
   - Integrate runtime validation into `uks ingest`.
-- [ ] **Adopt IRI/URN Identifiers**
+- [x] **Adopt IRI/URN Identifiers**
   - Deprecate raw filenames as IDs.
   - Implement `urn:uks:<namespace>:<category>:<id>` standard.
 

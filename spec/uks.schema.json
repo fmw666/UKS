@@ -5,12 +5,18 @@
   "description": "A standardized unit of knowledge for the Unified Knowledge System (UKS).",
   "type": "object",
   "required": [
+    "id",
     "title",
     "flavor",
     "nutrition",
     "ingredients"
   ],
   "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^urn:uks:[a-z0-9-]+:[a-z0-9-]+:[a-z0-9-]+$",
+      "description": "Unique Resource Name (URN) for the entity. Format: urn:uks:<namespace>:<category>:<id>"
+    },
     "title": {
       "type": "string",
       "description": "The name or identifier of the knowledge entity."

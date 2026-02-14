@@ -151,11 +151,16 @@ class KnowledgeGraphManager {
                 existing.observations = [...existingObs, ...newObs];
                 entityId = existing.id;
             } else {
-                const newId = crypto.randomUUID();
+                // Generate URN ID: urn:uks:local:<flavor>:<uuid>
+                const flavor = (entity.entityType || 'Concept').toLowerCase();
+                const cleanFlavor = flavor.replace(/[^a-z0-9-]/g, '');
+                const uuid = crypto.randomUUID();
+                const newId = `urn:uks:local:${cleanFlavor}:${uuid}`;
+                
                 const newEntity = {
                     id: newId,
                     name: entity.name,
-                    entityType: entity.entityType || 'concept',
+                    entityType: entity.entityType || 'Concept',
                     observations: inputObs
                 };
                 graph.entities.push(newEntity);

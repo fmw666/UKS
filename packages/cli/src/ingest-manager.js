@@ -6,6 +6,7 @@ const graphManager = require('./graph-manager');
 const crypto = require('crypto'); // Need for ID generation inside batch
 const Ajv = require('ajv');
 const { PluginManager } = require('@uks/core');
+const vectorManager = require('./vector-manager'); // Vector Support
 
 // Load Schema
 const SCHEMA_PATH = path.resolve(__dirname, '../../../spec/uks.schema.json');
@@ -100,6 +101,16 @@ class IngestManager {
 
                 const filename = path.basename(file, path.extname(file));
 
+                // 0. Pre-Validation ID Generation (Auto-fill URN if missing)
+                if ((data.flavor || data.nutrition) && !data.id) {
+                     const flavor = (data.flavor || 'Concept').toLowerCase();
+                     const cleanFlavor = flavor.replace(/[^a-z0-9-]/g, '');
+                     // Use md5 of title for stability, or random if no title
+                     const hashSource = data.title || crypto.randomUUID();
+                     const uuid = crypto.createHash('md5').update(hashSource).digest('hex');
+                     data.id = `urn:uks:local:${cleanFlavor}:${uuid}`;
+                }
+
                 // 0. Schema Validation (New in v1.3)
                 // Only if schema is loaded and data looks like a Bento Box (has flavor/nutrition)
                 // Or if explicitly requested via options (not yet implemented flag, but good practice)
@@ -149,7 +160,7 @@ class IngestManager {
                     continue;
                 }
 
-                // Queue Operation for Batch
+                    // Queue Operation for Batch
                 batchOperations.push(async (graph) => {
                     // Add Entity Logic (Duplicated from graph-manager but simplified for internal use)
                     const existing = graph.entities.find(e => e.name === entityName);
@@ -160,13 +171,31 @@ class IngestManager {
                         const newObs = inputObs.filter(o => !existingObs.includes(o));
                         existing.observations = [...existingObs, ...newObs];
                     } else {
-                        const newId = crypto.randomUUID();
+                        // Use pre-generated URN ID from data if available, otherwise generate new URN
+                        let newId = data.id;
+                        if (!newId) {
+                            const flavor = (entityType || 'Concept').toLowerCase();
+                            const cleanFlavor = flavor.replace(/[^a-z0-9-]/g, '');
+                            const uuid = crypto.randomUUID();
+                            newId = `urn:uks:local:${cleanFlavor}:${uuid}`;
+                        }
+
                         const newEntity = {
                             id: newId,
                             name: entityName,
                             entityType: entityType,
                             observations: inputObs
                         };
+                        
+                        // Vector Integration (New in v1.3)
+                        // If entity has content/description, generate embedding
+                        const textContent = data.description || (data.nutrition ? JSON.stringify(data.nutrition) : '') || entityName;
+                        if (textContent) {
+                            // Don't await here to keep batch fast? No, we want atomic success.
+                            // Upsert into vector store
+                            await vectorManager.upsert(newId, textContent);
+                        }
+
                         graph.entities.push(newEntity);
                         report.entitiesAdded++;
                     }
