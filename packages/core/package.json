@@ -1,19 +1,11 @@
 {
   "name": "@uks/core",
-  "version": "0.1.0",
-  "description": "Core plugin system and shared utilities for UKS",
-  "main": "index.js",
+  "version": "0.2.0",
+  "description": "Core logic for UKS",
+  "main": "drivers.js",
   "scripts": {
     "test": "node test/drivers.test.js"
   },
-  "keywords": [
-    "uks",
-    "knowledge-graph",
-    "plugin"
-  ],
-  "author": "The Flame Architect",
-  "license": "MIT",
-  "dependencies": {
-    "glob": "^13.0.3"
-  }
+  "author": "Xiao Fan Ge",
+  "license": "MIT"
 }

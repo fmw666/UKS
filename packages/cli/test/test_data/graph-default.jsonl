@@ -1,4 +1,4 @@
 {"type":"_aim","source":"local-knowledge-graph","version":"1.1.0"}
-{"id":"urn:uks:local:framework:8d7101aa-1da8-44f0-92d1-2e392d4f0a1f","name":"NestJS","entityType":"Framework","observations":["Node.js","TypeScript","Backend"],"type":"entity"}
-{"id":"urn:uks:local:architecture:66b5046c-b418-443e-a28e-6e410da3446b","name":"Microservices","entityType":"Architecture","observations":[],"type":"entity"}
-{"fromId":"urn:uks:local:framework:8d7101aa-1da8-44f0-92d1-2e392d4f0a1f","toId":"urn:uks:local:architecture:66b5046c-b418-443e-a28e-6e410da3446b","fromName":"NestJS","toName":"Microservices","relationType":"supports","type":"relation"}
+{"id":"urn:uks:local:framework:dcbd5f1f-2725-4e90-bace-d299b35456f5","name":"NestJS","entityType":"Framework","observations":["Node.js","TypeScript","Backend"],"type":"entity"}
+{"id":"urn:uks:local:architecture:d94952e2-cc62-4b4b-adef-70d06d5a21e8","name":"Microservices","entityType":"Architecture","observations":[],"type":"entity"}
+{"fromId":"urn:uks:local:framework:dcbd5f1f-2725-4e90-bace-d299b35456f5","toId":"urn:uks:local:architecture:d94952e2-cc62-4b4b-adef-70d06d5a21e8","fromName":"NestJS","toName":"Microservices","relationType":"supports","type":"relation"}

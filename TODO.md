@@ -35,7 +35,7 @@
 ## 🔌 Phase 4: Ecosystem & Interoperability
 *Goal: Speak the universal language of Agents.*
 
-- [ ] **Develop `uks-mcp-server`** 🚀
+- [x] **Develop `uks-mcp-server`** 🚀
   - Implement Model Context Protocol (MCP) interface.
   - Allow Claude/ChatGPT to mount UKS as a native tool resource.
 - [ ] **CI/CD Integration**

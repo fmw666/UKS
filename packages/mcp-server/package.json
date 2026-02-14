@@ -1,25 +1,11 @@
 {
-  "name": "@uks/mcp-server",
-  "version": "0.1.0",
-  "description": "Model Context Protocol (MCP) server for UKS",
+  "name": "uks-mcp-server",
+  "version": "0.2.0",
+  "description": "Model Context Protocol server for UKS",
   "main": "index.js",
-  "bin": {
-    "uks-mcp": "./index.js"
-  },
   "scripts": {
-    "start": "node index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": [
-    "uks",
-    "mcp",
-    "ai",
-    "agent"
-  ],
-  "author": "The Flame Architect",
-  "license": "MIT",
-  "dependencies": {
-    "@uks/core": "file:../core",
-    "@modelcontextprotocol/sdk": "^0.6.0"
-  }
+  "author": "Xiao Fan Ge",
+  "license": "MIT"
 }
