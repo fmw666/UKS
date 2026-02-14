@@ -4,12 +4,27 @@ const glob = require('glob');
 const jsonpath = require('jsonpath'); // Flexible extraction
 const graphManager = require('./graph-manager');
 const crypto = require('crypto'); // Need for ID generation inside batch
+const Ajv = require('ajv');
+
+// Load Schema
+const SCHEMA_PATH = path.resolve(__dirname, '../../../spec/uks.schema.json');
+const ajv = new Ajv();
+let validate = null;
+
+try {
+    // Sync load for CLI speed (in real app, maybe async)
+    const schemaContent = require('fs').readFileSync(SCHEMA_PATH, 'utf-8');
+    const schema = JSON.parse(schemaContent);
+    validate = ajv.compile(schema);
+} catch (e) {
+    // console.warn('Schema not found or invalid, validation disabled.', e.message);
+}
 
 class IngestManager {
     /**
      * Ingest JSON files matching the pattern.
      * @param {string} pattern - Glob pattern
-     * @param {object} options - { dryRun, json, map (path to config) }
+     * @param {object} options - { dryRun, json, map (path to config), validate: boolean }
      */
     async ingest(pattern, options = {}) {
         const files = glob.sync(pattern);
@@ -47,6 +62,17 @@ class IngestManager {
                 const content = await fs.readFile(file, 'utf-8');
                 const data = JSON.parse(content);
                 const filename = path.basename(file, path.extname(file));
+
+                // 0. Schema Validation (New in v1.3)
+                // Only if schema is loaded and data looks like a Bento Box (has flavor/nutrition)
+                // Or if explicitly requested via options (not yet implemented flag, but good practice)
+                if (validate && (data.flavor || data.nutrition || options.strict)) {
+                    const valid = validate(data);
+                    if (!valid) {
+                        const errorMsg = validate.errors.map(err => `${err.instancePath} ${err.message}`).join(', ');
+                        throw new Error(`Schema Validation Failed: ${errorMsg}`);
+                    }
+                }
 
                 // 1. Resolve Entity Name & Type
                 let entityName = filename;
