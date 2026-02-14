@@ -1,0 +1,15 @@
+{
+  "dish": "Express.js Middleware",
+  "flavor": "Pattern",
+  "taste_notes": "A function that has access to the request object (req), the response object (res), and the next function.",
+  "ingredients": [
+    "node_js",
+    "http_protocol"
+  ],
+  "nutrition": {
+    "structure": "function(req, res, next) { ... }",
+    "usage": "Logging, Authentication, Error Handling",
+    "pros": ["Chainable", "Reusable"],
+    "cons": ["Order matters (Sequence dependency)"]
+  }
+}
