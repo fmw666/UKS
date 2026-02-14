@@ -2,11 +2,21 @@
 const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
-const { sendCard } = require('../common/feishu-client');
+let sendCard;
+try {
+    // Try to load from local workspace skills (if available)
+    sendCard = require('../../../skills/common/feishu-client').sendCard;
+} catch (e) {
+    // Fallback for CI or standalone usage
+    sendCard = async (target, card) => {
+        console.log('[Mock SendCard] Would send to', target);
+        // console.log(JSON.stringify(card, null, 2));
+    };
+}
 
-const CLI_ROOT = path.resolve(__dirname, '../../temp/UKS_repo/packages/cli');
+const CLI_ROOT = path.resolve(__dirname, '../packages/cli');
 const CLI_BIN = path.resolve(CLI_ROOT, 'index.js');
-const GRAPH_FILE = path.resolve(__dirname, '../../knowledge/uks_graph/graph-default.jsonl');
+const GRAPH_FILE = process.env.UKS_GRAPH_FILE || path.resolve(__dirname, '../../knowledge/uks_graph/graph-default.jsonl');
 const TEMP_DATA = path.resolve(CLI_ROOT, 'test/dogfood_temp');
 
 // 1. Setup Environment

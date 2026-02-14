@@ -1,4 +1,4 @@
 {"type":"_aim","source":"local-knowledge-graph","version":"1.1.0"}
-{"id":"0a415078-3586-4569-9719-199ac9f13f5c","name":"NestJS","entityType":"Framework","observations":["Node.js","TypeScript","Backend"],"type":"entity"}
-{"id":"653b46f1-10c6-4ce7-8a7c-beb546895ee6","name":"Microservices","entityType":"Architecture","observations":[],"type":"entity"}
-{"fromId":"0a415078-3586-4569-9719-199ac9f13f5c","toId":"653b46f1-10c6-4ce7-8a7c-beb546895ee6","fromName":"NestJS","toName":"Microservices","relationType":"supports","type":"relation"}
+{"id":"71fa5e5c-0ef6-4982-8193-210f919ef600","name":"NestJS","entityType":"Framework","observations":["Node.js","TypeScript","Backend"],"type":"entity"}
+{"id":"de8e322e-ac4d-4a59-a3ca-d2e89f850b76","name":"Microservices","entityType":"Architecture","observations":[],"type":"entity"}
+{"fromId":"71fa5e5c-0ef6-4982-8193-210f919ef600","toId":"de8e322e-ac4d-4a59-a3ca-d2e89f850b76","fromName":"NestJS","toName":"Microservices","relationType":"supports","type":"relation"}

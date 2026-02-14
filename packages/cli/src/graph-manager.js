@@ -134,10 +134,12 @@ class KnowledgeGraphManager {
         // entity: { name, entityType, observations: [] }
         const graph = await this.loadGraph(context);
         const existing = graph.entities.find(e => e.name === entity.name);
+        const inputObs = entity.observations || [];
         
         if (existing) {
-            const newObs = entity.observations.filter(o => !existing.observations.includes(o));
-            existing.observations.push(...newObs);
+            const existingObs = existing.observations || [];
+            const newObs = inputObs.filter(o => !existingObs.includes(o));
+            existing.observations = [...existingObs, ...newObs];
             await this.saveGraph(graph, context);
             return existing.id; // Return existing ID
         } else {
@@ -146,7 +148,7 @@ class KnowledgeGraphManager {
                 id: newId,
                 name: entity.name,
                 entityType: entity.entityType || 'concept',
-                observations: entity.observations || []
+                observations: inputObs
             };
             graph.entities.push(newEntity);
             await this.saveGraph(graph, context);
