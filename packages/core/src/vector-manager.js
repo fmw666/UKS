@@ -16,9 +16,8 @@ class VectorManager {
     async init() {
         if (!this.pipeline) {
             try {
-                // Dynamic import to avoid load-time errors in environments without ONNX support
-                const { pipeline } = require('@xenova/transformers');
-                // console.error('🔌 Initializing Feature Extraction Pipeline (Xenova/all-MiniLM-L6-v2)...'); 
+                // ESM-only package: use dynamic import (no require() in Node)
+                const { pipeline } = await import('@xenova/transformers');
                 this.pipeline = await pipeline('feature-extraction', 'Xenova/all-MiniLM-L6-v2');
             } catch (e) {
                 console.warn('[VectorManager] Failed to load transformers. Semantic search disabled.', e.message);

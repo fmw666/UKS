@@ -2,8 +2,7 @@ const fs = require('fs').promises;
 const path = require('path');
 const { existsSync } = require('fs');
 const crypto = require('crypto'); // Native UUID
-const { pipeline } = require('@xenova/transformers');
-
+// @xenova/transformers is ESM-only: load only when semantic search is used (dynamic import)
 const config = require('./config');
 const BackupManager = require('./backup-manager'); // New
 
@@ -206,7 +205,7 @@ class KnowledgeGraphManager {
         
         if (options.semantic) {
             console.error('Using semantic search (Prototype via @xenova/transformers)...');
-            // Lazy load the pipeline
+            const { pipeline } = await import('@xenova/transformers');
             const pipe = await pipeline('feature-extraction', 'Xenova/all-MiniLM-L6-v2');
             
             // Helper: Cosine Similarity
