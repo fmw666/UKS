@@ -76,11 +76,11 @@ class VectorManager {
         await this.init();
         
         // Load entities from GraphManager
-        console.log('📦 Loading Knowledge Graph...');
+        // console.log('📦 Loading Knowledge Graph...');
         const graph = await graphManager.getAll(); // Assuming default context
         const entities = graph.entities || [];
         
-        console.log(`🔍 Found ${entities.length} entities.`);
+        // console.log(`🔍 Found ${entities.length} entities.`);
         let count = 0;
 
         for (const entity of entities) {
@@ -94,7 +94,7 @@ class VectorManager {
             // Richer context: Name + Type + Observations
             const text = `[${entity.entityType || 'Concept'}] ${entity.name}. ${(entity.observations || []).join('. ')}`;
             
-            console.log(`🧠 Embedding: ${entity.name}...`);
+            // console.log(`🧠 Embedding: ${entity.name}...`);
             const embedding = await this.generateEmbedding(text);
 
             // Update in-memory vector store
@@ -115,10 +115,10 @@ class VectorManager {
         }
 
         if (count > 0) {
-            console.log(`💾 Saving ${this.vectors.length} vectors to disk...`);
+            // console.log(`💾 Saving ${this.vectors.length} vectors to disk...`);
             await this.saveVectors();
         } else {
-            console.log('✨ No new embeddings needed.');
+            // console.log('✨ No new embeddings needed.');
         }
 
         return count;
