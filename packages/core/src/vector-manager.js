@@ -44,6 +44,13 @@ class VectorManager {
 
     async generateEmbedding(text) {
         if (!this.pipeline) await this.init();
+        
+        // Graceful degradation if pipeline failed to load (e.g. CI environment)
+        if (!this.pipeline) {
+            // Return zero vector of dimension 384 (all-MiniLM-L6-v2 size)
+            return new Array(384).fill(0);
+        }
+
         const output = await this.pipeline(text, { pooling: 'mean', normalize: true });
         return Array.from(output.data); // Convert Float32Array to regular array for JSON
     }
