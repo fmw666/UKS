@@ -97,16 +97,20 @@ async function runAudit() {
 
             // 2.3b Verify Semantic Search (New Feature)
             try {
+                // Ensure vector-manager.js logic for generating embedding has run during ingest
                 const semanticCmd = `export UKS_STORAGE_PATH=${path.dirname(GRAPH_FILE)} && node ${CLI_BIN} search "${entityName.split('_')[0]}" --semantic`;
                 const semanticOut = execSync(semanticCmd).toString();
                 // Extract JSON part (skip "Using semantic search..." log)
                 const jsonStart = semanticOut.indexOf('{');
-                const semanticRes = JSON.parse(semanticOut.substring(jsonStart));
-                
-                if (semanticRes.metadata && semanticRes.metadata.mode === 'semantic' && semanticRes.entities.length > 0) {
-                     log('E2E Semantic', 'success', `Semantic Search active (Model: ${semanticRes.metadata.model})`);
+                if (jsonStart !== -1) {
+                    const semanticRes = JSON.parse(semanticOut.substring(jsonStart));
+                    if (semanticRes.type === 'semantic' && semanticRes.results && semanticRes.results.length > 0) {
+                         log('E2E Semantic', 'success', `Semantic Search active (Found ${semanticRes.results.length} results)`);
+                    } else {
+                        log('E2E Semantic', 'warning', 'Semantic search returned no results or wrong mode');
+                    }
                 } else {
-                    log('E2E Semantic', 'warning', 'Semantic search returned no results or wrong mode');
+                    log('E2E Semantic', 'warning', 'No JSON output from semantic search');
                 }
             } catch (e) {
                 log('E2E Semantic', 'warning', `Semantic search check failed (optional): ${e.message}`);
