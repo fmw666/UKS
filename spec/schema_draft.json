@@ -1,0 +1,27 @@
+{
+  "title": "North Star Knowledge System (Meta-Architecture)",
+  "version": "1.0.0",
+  "archetype": "Meta-Knowledge",
+  "summary": "The structural blueprint for the 'Project North Star' knowledge base. Designed for AI consumability, density, and evolutionary iteration.",
+  "core_philosophy": [
+    "AI-First: Assets are written for machine parsing (JSON), not human leisure (Prose).",
+    "Density: Maximum information per token. No fluff.",
+    "Structure: Strict schema enforcement to enable future automated reasoning and graph linking."
+  ],
+  "file_schema": {
+    "root_keys": ["title", "version", "archetype", "summary"],
+    "content_keys": ["concepts", "patterns", "implementation_strategies", "anti_patterns"],
+    "format": "JSON (Strict Syntax)"
+  },
+  "indexing_strategy": {
+    "current": "Hierarchical Taxonomy (Folder-based: node/, typescript/, architecture/)",
+    "future": "Graph-based Master Index (linking concepts across files via IDs)",
+    "naming_convention": "snake_case filenames (e.g., `domain_events.json`)"
+  },
+  "evolution_process": {
+    "step_1": "Ingest (Read/Clone external sources)",
+    "step_2": "Distill (Extract core patterns into JSON)",
+    "step_3": "Refine (Update JSON version on new insights)",
+    "step_4": "Index (Add to global map - TODO)"
+  }
+}
