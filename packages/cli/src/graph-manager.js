@@ -5,7 +5,7 @@ const { existsSync } = require('fs');
 // Configuration
 // Dynamic storage path with fallback to cwd for flexibility
 const BASE_MEMORY_PATH = process.env.UKS_STORAGE_PATH || path.resolve(process.cwd(), '.northstar');
-const FILE_MARKER = { type: "_aim", source: "local-knowledge-graph", version: "1.0.0" };
+const FILE_MARKER = { type: '_aim', source: 'local-knowledge-graph', version: '1.0.0' };
 const LOCK_FILE = path.join(BASE_MEMORY_PATH, '.lock');
 
 // Ensure base path exists
@@ -51,8 +51,8 @@ class KnowledgeGraphManager {
     async loadGraph(context = 'default') {
         const filePath = getFilePath(context);
         try {
-            const data = await fs.readFile(filePath, "utf-8");
-            const lines = data.split("\n").filter(line => line.trim() !== "");
+            const data = await fs.readFile(filePath, 'utf-8');
+            const lines = data.split('\n').filter(line => line.trim() !== '');
             
             if (lines.length === 0) return { entities: [], relations: [] };
 
@@ -68,13 +68,13 @@ class KnowledgeGraphManager {
             return lines.reduce((graph, line) => {
                 try {
                     const item = JSON.parse(line);
-                    if (item.type === "entity") graph.entities.push(item);
-                    if (item.type === "relation") graph.relations.push(item);
+                    if (item.type === 'entity') graph.entities.push(item);
+                    if (item.type === 'relation') graph.relations.push(item);
                 } catch (e) { /* ignore corrupt lines */ }
                 return graph;
             }, { entities: [], relations: [] });
         } catch (error) {
-            if (error.code === "ENOENT") return { entities: [], relations: [] };
+            if (error.code === 'ENOENT') return { entities: [], relations: [] };
             throw error;
         }
     }
@@ -89,10 +89,10 @@ class KnowledgeGraphManager {
             const filePath = getFilePath(context);
             const lines = [
                 JSON.stringify(FILE_MARKER),
-                ...graph.entities.map(e => JSON.stringify({ ...e, type: "entity" })),
-                ...graph.relations.map(r => JSON.stringify({ ...r, type: "relation" }))
+                ...graph.entities.map(e => JSON.stringify({ ...e, type: 'entity' })),
+                ...graph.relations.map(r => JSON.stringify({ ...r, type: 'relation' }))
             ];
-            await fs.writeFile(filePath, lines.join("\n"));
+            await fs.writeFile(filePath, lines.join('\n'));
         } finally {
             await releaseLock();
         }
