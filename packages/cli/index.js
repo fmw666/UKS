@@ -73,8 +73,10 @@ program
 
 program
     .command('search <query>')
-    .action(async (query) => {
-        const result = await graphManager.search(query);
+    .description('Search the knowledge graph')
+    .option('--semantic', 'Use semantic search (embeddings)')
+    .action(async (query, options) => {
+        const result = await graphManager.search(query, options);
         console.log(JSON.stringify(result, null, 2));
     });
 
@@ -83,6 +85,36 @@ program
     .action(async () => {
         const result = await graphManager.getAll();
         console.log(JSON.stringify(result, null, 2));
+    });
+
+program
+    .command('serve')
+    .description('Start the UKS Web Visualizer')
+    .option('-p, --port <number>', 'Port to run on', 3000)
+    .option('-f, --file <path>', 'Path to graph file', 'graph-default.jsonl')
+    .action((options) => {
+        const path = require('path');
+        const { spawn } = require('child_process');
+        
+        const viewerPath = path.resolve(__dirname, '../viewer');
+        const graphFile = path.resolve(process.cwd(), options.file);
+        
+        console.log(`🚀 Starting UKS Visualizer from ${viewerPath}...`);
+        console.log(`📄 Serving graph: ${graphFile}`);
+
+        const server = spawn('npm', ['start'], {
+            cwd: viewerPath,
+            stdio: 'inherit',
+            env: { 
+                ...process.env, 
+                PORT: options.port,
+                GRAPH_FILE: graphFile
+            }
+        });
+
+        server.on('error', (err) => {
+            console.error('Failed to start viewer:', err);
+        });
     });
 
 // If executing directly

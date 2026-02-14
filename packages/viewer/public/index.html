@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UKS Graph Visualizer</title>
+    <style>
+        body { margin: 0; overflow: hidden; background-color: #1a1a1a; color: #fff; font-family: sans-serif; }
+        #graph { width: 100vw; height: 100vh; }
+        .controls { position: absolute; top: 10px; left: 10px; background: rgba(0,0,0,0.7); padding: 10px; border-radius: 5px; }
+    </style>
+    <script src="https://unpkg.com/force-graph"></script>
+</head>
+<body>
+    <div class="controls">
+        <h3>🔥 UKS Visualizer</h3>
+        <p>Left-click: Rotate</p>
+        <p>Right-click: Pan</p>
+        <p>Scroll: Zoom</p>
+    </div>
+    <div id="graph"></div>
+
+    <script>
+        fetch('/api/graph')
+            .then(res => res.json())
+            .then(data => {
+                const Graph = ForceGraph()
+                    (document.getElementById('graph'))
+                    .graphData(data)
+                    .nodeId('id')
+                    .nodeLabel('id')
+                    .nodeAutoColorBy('group')
+                    .linkDirectionalParticles(2)
+                    .linkDirectionalParticleSpeed(d => 0.005)
+                    .onNodeDragEnd(node => {
+                        node.fx = node.x;
+                        node.fy = node.y;
+                    });
+            })
+            .catch(err => console.error(err));
+    </script>
+</body>
+</html>

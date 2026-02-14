@@ -1,0 +1,3 @@
+{"id": "UKS", "type": "Project", "observations": ["Knowledge Graph Standard"]}
+{"id": "Viewer", "type": "Component", "observations": ["Web Visualizer"]}
+{"source": "UKS", "target": "Viewer", "relation": "contains"}

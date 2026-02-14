@@ -12,13 +12,15 @@ Driven by feedback from Little Junjie.
     - Upgrade `ingest` command to validate JSON against the schema before importing.
 
 ## Phase 2: Intelligence (Vector)
-- [ ] **Embedding Research**
+- [x] **Embedding Research**
     - Evaluate `xenova/transformers` (local execution) vs API.
-- [ ] **Search Upgrade**
+- [x] **Search Upgrade**
     - Implement `uks search --semantic <query>` (Prototype).
+    - Added `@xenova/transformers` for local embeddings.
+    - Updated `ingest` to capture `observations` array from JSON.
 
 ## Phase 3: Visibility (UI)
-- [ ] **Web Visualizer**
+- [x] **Web Visualizer**
     - Create `packages/viewer` or `uks serve` command.
     - Render `graph-default.jsonl` using a simple force-directed graph (D3/Cytoscape).
 
