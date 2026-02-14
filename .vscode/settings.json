@@ -2,10 +2,11 @@
     "json.schemas": [
         {
             "fileMatch": [
-                "knowledge/**/*.json",
-                "*.bento.json"
+                "*.bento.json",
+                "knowledge/**/*.json"
             ],
             "url": "./spec/uks.schema.json"
         }
-    ]
+    ],
+    "json.validate.enable": true
 }
