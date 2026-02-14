@@ -45,6 +45,61 @@ class IngestPlugin extends Plugin {
     }
 }
 
+/**
+ * Storage Abstraction Layer (SAL) - Driver Interface
+ */
+class StorageDriver {
+    constructor(config = {}) {
+        this.config = config;
+    }
+
+    /**
+     * Read file content
+     * @param {string} path - Virtual path (e.g., 'vectors.jsonl')
+     * @returns {Promise<string>} File content
+     */
+    async read(path) {
+        throw new Error('StorageDriver must implement read(path)');
+    }
+
+    /**
+     * Write content to file
+     * @param {string} path - Virtual path
+     * @param {string} content - Data to write
+     * @returns {Promise<void>}
+     */
+    async write(path, content) {
+        throw new Error('StorageDriver must implement write(path, content)');
+    }
+
+    /**
+     * List files in a directory/prefix
+     * @param {string} prefix - Optional prefix filter
+     * @returns {Promise<string[]>} List of file paths
+     */
+    async list(prefix = '') {
+        throw new Error('StorageDriver must implement list(prefix)');
+    }
+
+    /**
+     * Check if file exists
+     * @param {string} path 
+     * @returns {Promise<boolean>}
+     */
+    async exists(path) {
+        throw new Error('StorageDriver must implement exists(path)');
+    }
+
+    /**
+     * Delete a file
+     * @param {string} path 
+     * @returns {Promise<void>}
+     */
+    async delete(path) {
+        throw new Error('StorageDriver must implement delete(path)');
+    }
+}
+
 class PluginManager {
     constructor() {
         this.plugins = [];
@@ -93,5 +148,6 @@ class PluginManager {
 module.exports = {
     Plugin,
     IngestPlugin,
+    StorageDriver,
     PluginManager: new PluginManager()
 };

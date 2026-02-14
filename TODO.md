@@ -26,8 +26,8 @@
 ## 💾 Phase 3: Storage Abstraction (Cloud-Ready)
 *Goal: Break free from the local filesystem.*
 
-- [ ] **Design Driver Interface (SAL)**
-  - Define `StorageDriver` interface: `read()`, `write()`, `list()`.
+- [x] **Design Driver Interface (SAL)**
+  - [x] Defined `StorageDriver` interface in `@uks/core`.
 - [ ] **Implement Drivers**
   - `S3Driver` (AWS/MinIO support).
   - `GitDriver` (Version controlled knowledge).
@@ -40,7 +40,7 @@
   - Allow Claude/ChatGPT to mount UKS as a native tool resource.
 - [ ] **CI/CD Integration**
   - Create GitHub Action `uks-validate-action`.
-- [ ] **Comprehensive Test Suite**
+- [x] **Comprehensive Test Suite**
   - Add Unit Tests for Vector Manager (mock transformers).
   - Add E2E Tests for Semantic Search.
 
