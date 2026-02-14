@@ -5,8 +5,7 @@
   "description": "A standardized unit of knowledge for the Unified Knowledge System (UKS).",
   "type": "object",
   "required": [
-    "id",
-    "title",
+    "dish",
     "flavor",
     "nutrition",
     "ingredients"
@@ -15,15 +14,15 @@
     "id": {
       "type": "string",
       "pattern": "^urn:uks:[a-z0-9-]+:[a-z0-9-]+:[a-z0-9-]+$",
-      "description": "Unique Resource Name (URN) for the entity. Format: urn:uks:<namespace>:<category>:<id>"
+      "description": "Unique Resource Name (URN). Format: urn:uks:<namespace>:<flavor>:<id>"
     },
-    "title": {
+    "dish": {
       "type": "string",
-      "description": "The name or identifier of the knowledge entity."
+      "description": "The name of the Dish (Knowledge Entity). Previously 'title'."
     },
     "flavor": {
       "type": "string",
-      "description": "The category or type of the entity (e.g., 'Concept', 'Tool', 'Protocol').",
+      "description": "The type/category (e.g., 'Concept', 'Tool').",
       "enum": [
         "Concept",
         "Tool",
@@ -36,90 +35,34 @@
     },
     "nutrition": {
       "type": "object",
-      "description": "Metadata and observations about the entity.",
+      "description": "Core data payload (observations, specs, facts).",
       "properties": {
         "observations": {
           "type": "array",
-          "items": {
-            "type": "string"
-          },
-          "description": "Key insights or facts."
+          "items": { "type": "string" }
         },
         "tags": {
           "type": "array",
-          "items": {
-            "type": "string"
-          },
-          "description": "Keywords for indexing."
+          "items": { "type": "string" }
         },
         "complexity": {
           "type": "string",
-          "enum": ["Low", "Medium", "High"],
-          "description": "Estimated cognitive load."
+          "enum": ["Low", "Medium", "High"]
         }
       },
       "additionalProperties": true
     },
     "ingredients": {
       "type": "array",
-      "description": "Components, code snippets, or related entities.",
+      "description": "Dependencies or related entities.",
       "items": {
         "type": "object",
         "properties": {
           "name": { "type": "string" },
-          "type": { "type": "string" },
-          "content": { "type": "string" },
-          "code_snippet": { "type": "string" }
+          "relation": { "type": "string" }
         },
         "required": ["name"]
       }
     }
-  },
-  "allOf": [
-    {
-      "if": { "properties": { "flavor": { "const": "Tool" } } },
-      "then": {
-        "properties": {
-          "nutrition": {
-            "type": "object",
-            "required": ["language"],
-            "properties": {
-              "language": { "type": "string" },
-              "version": { "type": "string" },
-              "license": { "type": "string" }
-            }
-          }
-        }
-      }
-    },
-    {
-      "if": { "properties": { "flavor": { "const": "Person" } } },
-      "then": {
-        "properties": {
-          "nutrition": {
-            "type": "object",
-            "required": ["role"],
-            "properties": {
-              "role": { "type": "string" },
-              "email": { "type": "string", "format": "email" }
-            }
-          }
-        }
-      }
-    },
-    {
-      "if": { "properties": { "flavor": { "const": "Protocol" } } },
-      "then": {
-        "properties": {
-          "nutrition": {
-            "type": "object",
-            "required": ["steps"],
-            "properties": {
-              "steps": { "type": "array", "items": { "type": "string" } }
-            }
-          }
-        }
-      }
-    }
-  ]
+  }
 }

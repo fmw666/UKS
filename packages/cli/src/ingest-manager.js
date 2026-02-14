@@ -122,9 +122,9 @@ class IngestManager {
                     }
                 }
 
-                // 1. Resolve Entity Name & Type
-                let entityName = filename;
-                let entityType = 'KnowledgeAsset';
+                // 1. Resolve Entity Name & Type (Adapter for 'dish' vs 'title')
+                let entityName = data.dish || data.title || filename;
+                let entityType = data.flavor || data.archetype || 'KnowledgeAsset';
                 let observations = [];
 
                 if (mappingConfig) {
@@ -141,8 +141,8 @@ class IngestManager {
                     }
                 } else {
                     // Default Heuristics (Legacy)
-                    entityName = data.title || filename;
-                    entityType = data.archetype || 'KnowledgeAsset';
+                    entityName = data.dish || data.title || filename;
+                    entityType = data.flavor || data.archetype || 'KnowledgeAsset';
                 }
 
                 // Add source/version obs
