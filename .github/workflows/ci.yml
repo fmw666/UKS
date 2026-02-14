@@ -1,0 +1,57 @@
+name: "🔥 Hashira Training (CI)"
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  training:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x]
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0 # Needed for audit to check git history? Maybe not, but good for logs.
+
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+        cache-dependency-path: packages/cli/package-lock.json
+
+    - name: Install Dependencies
+      run: |
+        cd packages/cli
+        npm ci
+
+    - name: 🧪 Unit Tests (The First Breath)
+      run: |
+        cd packages/cli
+        npm test
+
+    - name: ⚔️ Audit E2E (The Continuous Training)
+      # Run the exact same script we use locally!
+      run: |
+        # Set up a fake environment for audit script
+        node scripts/audit.js
+      env:
+        # Pass any secrets if needed (e.g., if audit script tries to notify Feishu, which it does)
+        # However, in CI, we might want to suppress external notifications or handle them differently.
+        # For now, let's assume audit.js handles missing Feishu gracefully (it does try/catch).
+        CI: true
+
+    - name: 🧹 Lint Check (The Discipline)
+      # Simple check: no console.log in src/ (except CLI entry points)
+      run: |
+        if grep -r "console.log" packages/cli/src --exclude="index.js"; then
+          echo "❌ Forbidden console.log found in library code!"
+          exit 1
+        fi
+        echo "✅ Clean Code."
