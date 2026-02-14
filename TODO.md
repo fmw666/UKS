@@ -16,10 +16,10 @@
 ## 🧠 Phase 2: Neuro-Symbolic Retrieval (The Brain)
 *Goal: Beyond keyword matching. Semantic understanding + Structural precision.*
 
-- [ ] **Integrate Vector Database**
+- [x] **Integrate Vector Database**
   - Evaluate: LanceDB (Embedded) vs Chroma (Local).
   - Implement `uks embed`: Auto-generate embeddings.
-- [ ] **Hybrid Search Command**
+- [x] **Hybrid Search Command**
   - Upgrade `uks search` to support `--semantic`.
   - Implement RAG pipeline: Graph Traversal + Vector Similarity.
 
@@ -40,6 +40,9 @@
   - Allow Claude/ChatGPT to mount UKS as a native tool resource.
 - [ ] **CI/CD Integration**
   - Create GitHub Action `uks-validate-action`.
+- [ ] **Comprehensive Test Suite**
+  - Add Unit Tests for Vector Manager (mock transformers).
+  - Add E2E Tests for Semantic Search.
 
 ---
 *Maintained by Auto-Dev Cron* 🤖

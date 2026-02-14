@@ -56,6 +56,17 @@ program
             console.log(JSON.stringify(result, null, 2));
         }
     });
+
+program
+    .command('embed')
+    .description('Generate embeddings for all knowledge entries')
+    .option('--force', 'Force regeneration of all embeddings')
+    .action(async (options) => {
+        console.log('🧠 Generating embeddings...');
+        const count = await vectorManager.embedAll(options.force);
+        console.log(`✅ Embedded ${count} items.`);
+    });
+
 program
     .command('undo')
     .description('Revert graph to the last saved state')
@@ -83,15 +94,6 @@ program
     .action(async (from, relation, to) => {
         await graphManager.addRelation({ from, to, relationType: relation });
         console.log(`Linked '${from}' --${relation}--> '${to}'`);
-    });
-
-program
-    .command('search <query>')
-    .description('Search the knowledge graph')
-    .option('--semantic', 'Use semantic search (embeddings)')
-    .action(async (query, options) => {
-        const result = await graphManager.search(query, options);
-        console.log(JSON.stringify(result, null, 2));
     });
 
 program

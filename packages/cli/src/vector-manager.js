@@ -2,6 +2,7 @@ const { pipeline } = require('@xenova/transformers');
 const fs = require('fs').promises;
 const path = require('path');
 const config = require('./config');
+const graphManager = require('./graph-manager'); // Import GraphManager
 
 const STORAGE_PATH = process.env.UKS_STORAGE_PATH || config.get('storagePath') || path.resolve(process.cwd(), '.northstar');
 const VECTOR_FILE = path.join(STORAGE_PATH, 'vectors.jsonl');
@@ -10,14 +11,20 @@ class VectorManager {
     constructor() {
         this.pipeline = null;
         this.vectors = [];
+        this.loaded = false;
     }
 
     async init() {
         if (!this.pipeline) {
+            // Only log if not in a "silent" mode or maybe check if stdout is TTY?
+            // For now, let's silence it to avoid breaking JSON consumers, or use stderr.
+            // console.error('🔌 Initializing Feature Extraction Pipeline (Xenova/all-MiniLM-L6-v2)...'); 
             // Lazy load model (download on first run)
             this.pipeline = await pipeline('feature-extraction', 'Xenova/all-MiniLM-L6-v2');
         }
-        await this.loadVectors();
+        if (!this.loaded) {
+            await this.loadVectors();
+        }
     }
 
     async loadVectors() {
@@ -26,8 +33,10 @@ class VectorManager {
             this.vectors = data.split('\n')
                 .filter(l => l.trim())
                 .map(l => JSON.parse(l));
+            this.loaded = true;
         } catch (e) {
             this.vectors = []; // Valid empty state
+            this.loaded = true;
         }
     }
 
@@ -50,9 +59,8 @@ class VectorManager {
         } else {
             this.vectors.push(record);
         }
-
-        // Persist (Append-only for now, ideally should rewrite or use proper DB)
-        // For simplicity in CLI: rewrite file
+        
+        // We defer saving to batch operations where possible, but for single upsert we save.
         await this.saveVectors();
     }
 
@@ -61,13 +69,73 @@ class VectorManager {
         await fs.writeFile(VECTOR_FILE, lines.join('\n'));
     }
 
+    // Bulk Embed All Entities from Graph
+    async embedAll(force = false) {
+        await this.init();
+        
+        // Load entities from GraphManager
+        console.log('📦 Loading Knowledge Graph...');
+        const graph = await graphManager.getAll(); // Assuming default context
+        const entities = graph.entities || [];
+        
+        console.log(`🔍 Found ${entities.length} entities.`);
+        let count = 0;
+
+        for (const entity of entities) {
+            // Check if already embedded
+            const existing = this.vectors.find(v => v.id === entity.id);
+            if (existing && !force) {
+                continue;
+            }
+
+            // Construct text representation
+            // Richer context: Name + Type + Observations
+            const text = `[${entity.entityType || 'Concept'}] ${entity.name}. ${(entity.observations || []).join('. ')}`;
+            
+            console.log(`🧠 Embedding: ${entity.name}...`);
+            const embedding = await this.generateEmbedding(text);
+
+            // Update in-memory vector store
+            const index = this.vectors.findIndex(v => v.id === entity.id);
+            const record = { 
+                id: entity.id, 
+                text: text, // Store full text for context in search results
+                vector: embedding,
+                metadata: { type: entity.entityType, name: entity.name }
+            };
+
+            if (index >= 0) {
+                this.vectors[index] = record;
+            } else {
+                this.vectors.push(record);
+            }
+            count++;
+        }
+
+        if (count > 0) {
+            console.log(`💾 Saving ${this.vectors.length} vectors to disk...`);
+            await this.saveVectors();
+        } else {
+            console.log('✨ No new embeddings needed.');
+        }
+
+        return count;
+    }
+
     // Cosine Similarity Search
     async search(queryText, topK = 5) {
+        await this.init(); // Ensure loaded
+        
         const queryVec = await this.generateEmbedding(queryText);
         
         const results = this.vectors.map(doc => {
             const score = this.cosineSimilarity(queryVec, doc.vector);
-            return { id: doc.id, score, text: doc.text };
+            return { 
+                id: doc.id, 
+                score, 
+                text: doc.text,
+                metadata: doc.metadata 
+            };
         });
 
         return results
