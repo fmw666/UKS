@@ -1,7 +1,15 @@
-const config = require('./src/config');
-const graphManager = require('./src/graph-manager');
-const ingestManager = require('./src/ingest-manager');
-const vectorManager = require('./src/vector-manager'); // Vector
+const { 
+    GraphManager: graphManager, 
+    IngestManager: ingestManager, 
+    VectorManager: vectorManager,
+} = require('../core'); 
+
+// Config logic is now in core too, but CLI needs to set it.
+// We can expose a ConfigManager from core.
+// For MVP, let's assume the managers internally use the core config.
+// But we need to set 'config' for the CLI command 'uks config set ...'
+const config = require('../core/src/config'); 
+
 const { program } = require('commander');
 
 // Config Command
@@ -57,16 +65,7 @@ program
         }
     });
 
-program
-    .command('embed')
-    .description('Generate embeddings for all knowledge entries')
-    .option('--force', 'Force regeneration of all embeddings')
-    .action(async (options) => {
-        console.log('🧠 Generating embeddings...');
-        const count = await vectorManager.embedAll(options.force);
-        console.log(`✅ Embedded ${count} items.`);
-    });
-
+// Undo Command (New)
 program
     .command('undo')
     .description('Revert graph to the last saved state')
@@ -94,6 +93,13 @@ program
     .action(async (from, relation, to) => {
         await graphManager.addRelation({ from, to, relationType: relation });
         console.log(`Linked '${from}' --${relation}--> '${to}'`);
+    });
+
+program
+    .command('search-old <query>') // Renamed to avoid conflict if any
+    .action(async (query) => {
+        const result = await graphManager.search(query);
+        console.log(JSON.stringify(result, null, 2));
     });
 
 program
