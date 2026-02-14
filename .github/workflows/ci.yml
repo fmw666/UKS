@@ -29,8 +29,11 @@ jobs:
     - name: Install Dependencies (Root)
       run: npm ci
 
-    - name: 🧪 Run All Tests (Workspaces)
-      run: npm test
+    - name: 🧪 Test Core
+      run: cd packages/core && npm test
+
+    - name: 🧪 Test CLI
+      run: cd packages/cli && npm test
 
     - name: ⚔️ Audit E2E (The Continuous Training)
       # Run the exact same script we use locally!
