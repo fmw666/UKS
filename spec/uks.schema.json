@@ -1,0 +1,72 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://openclaw.ai/schemas/uks-bento.json",
+  "title": "UKS Bento Box",
+  "description": "A standardized unit of knowledge for the Unified Knowledge System (UKS).",
+  "type": "object",
+  "required": [
+    "title",
+    "flavor",
+    "nutrition",
+    "ingredients"
+  ],
+  "properties": {
+    "title": {
+      "type": "string",
+      "description": "The name or identifier of the knowledge entity."
+    },
+    "flavor": {
+      "type": "string",
+      "description": "The category or type of the entity (e.g., 'Concept', 'Tool', 'Protocol').",
+      "enum": [
+        "Concept",
+        "Tool",
+        "Protocol",
+        "Person",
+        "Event",
+        "Location",
+        "Code"
+      ]
+    },
+    "nutrition": {
+      "type": "object",
+      "description": "Metadata and observations about the entity.",
+      "properties": {
+        "observations": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Key insights or facts."
+        },
+        "tags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Keywords for indexing."
+        },
+        "complexity": {
+          "type": "string",
+          "enum": ["Low", "Medium", "High"],
+          "description": "Estimated cognitive load."
+        }
+      },
+      "additionalProperties": true
+    },
+    "ingredients": {
+      "type": "array",
+      "description": "Components, code snippets, or related entities.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string" },
+          "type": { "type": "string" },
+          "content": { "type": "string" },
+          "code_snippet": { "type": "string" }
+        },
+        "required": ["name"]
+      }
+    }
+  }
+}
