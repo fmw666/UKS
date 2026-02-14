@@ -17,11 +17,14 @@ try {
 const CLI_ROOT = path.resolve(__dirname, '../packages/cli');
 const CORE_ROOT = path.resolve(__dirname, '../packages/core');
 const CLI_BIN = path.resolve(CLI_ROOT, 'index.js');
-const GRAPH_FILE = process.env.UKS_GRAPH_FILE || path.resolve(__dirname, '../../knowledge/uks_graph/graph-default.jsonl');
+// E2E graph: use CLI's bundled graph dir so path exists in repo (cross-platform)
+const GRAPH_FILE = process.env.UKS_GRAPH_FILE || path.join(CLI_ROOT, 'knowledge', 'uks_graph', 'graph-default.jsonl');
+const E2E_STORAGE = path.dirname(GRAPH_FILE);
 const TEMP_DATA = path.resolve(CLI_ROOT, 'test/dogfood_temp');
 
 // 1. Setup Environment
 if (!fs.existsSync(TEMP_DATA)) fs.mkdirSync(TEMP_DATA, { recursive: true });
+if (!fs.existsSync(E2E_STORAGE)) fs.mkdirSync(E2E_STORAGE, { recursive: true });
 
 async function runAudit() {
     let report = {
@@ -72,10 +75,11 @@ async function runAudit() {
             fs.writeFileSync(testFile, JSON.stringify(testJson));
 
             // 2.2 Execute Ingest (Real Run on Graph)
-            // Use dedicated graph context to avoid polluting main graph too much, 
-            // OR use Undo immediately. Let's use main graph + Undo for realistic test.
-            const ingestCmd = `export UKS_STORAGE_PATH=${path.dirname(GRAPH_FILE)} && node ${CLI_BIN} ingest "${testFile}" --json`;
-            const ingestOut = execSync(ingestCmd).toString();
+            // Use dedicated graph context; Undo at end for realistic test. Cross-platform env.
+            const ingestOut = execSync(`node "${CLI_BIN}" ingest "${testFile}" --json`, {
+                env: { ...process.env, UKS_STORAGE_PATH: E2E_STORAGE },
+                encoding: 'utf-8'
+            });
             const ingestRes = JSON.parse(ingestOut);
 
             if (ingestRes.errors.length === 0 && ingestRes.entitiesAdded > 0) {
@@ -85,8 +89,10 @@ async function runAudit() {
             }
 
             // 2.3 Verify Search
-            const searchCmd = `export UKS_STORAGE_PATH=${path.dirname(GRAPH_FILE)} && node ${CLI_BIN} search "${entityName}"`;
-            const searchOut = execSync(searchCmd).toString();
+            const searchOut = execSync(`node "${CLI_BIN}" search "${entityName}"`, {
+                env: { ...process.env, UKS_STORAGE_PATH: E2E_STORAGE },
+                encoding: 'utf-8'
+            });
             const searchRes = JSON.parse(searchOut);
             
             if (searchRes.entities.length > 0 && searchRes.entities[0].name === entityName) {
@@ -98,8 +104,10 @@ async function runAudit() {
             // 2.3b Verify Semantic Search (New Feature)
             try {
                 // Ensure vector-manager.js logic for generating embedding has run during ingest
-                const semanticCmd = `export UKS_STORAGE_PATH=${path.dirname(GRAPH_FILE)} && node ${CLI_BIN} search "${entityName.split('_')[0]}" --semantic`;
-                const semanticOut = execSync(semanticCmd).toString();
+                const semanticOut = execSync(`node "${CLI_BIN}" search "${entityName.split('_')[0]}" --semantic`, {
+                    env: { ...process.env, UKS_STORAGE_PATH: E2E_STORAGE },
+                    encoding: 'utf-8'
+                });
                 // Extract JSON part (skip "Using semantic search..." log)
                 const jsonStart = semanticOut.indexOf('{');
                 if (jsonStart !== -1) {
@@ -117,15 +125,19 @@ async function runAudit() {
             }
 
             // 2.4 Verify Undo (Rollback)
-            const undoCmd = `export UKS_STORAGE_PATH=${path.dirname(GRAPH_FILE)} && node ${CLI_BIN} undo`;
-            const undoOut = execSync(undoCmd).toString(); // "Reverted to backup..."
+            const undoOut = execSync(`node "${CLI_BIN}" undo`, {
+                env: { ...process.env, UKS_STORAGE_PATH: E2E_STORAGE },
+                encoding: 'utf-8'
+            });
             
             if (undoOut.includes('Reverted')) {
                 log('E2E Undo', 'success', 'Rollback successful');
                 
                 // Double Check: Search again (should be gone)
-                const verifyCmd = `export UKS_STORAGE_PATH=${path.dirname(GRAPH_FILE)} && node ${CLI_BIN} search "${entityName}"`;
-                const verifyOut = execSync(verifyCmd).toString();
+                const verifyOut = execSync(`node "${CLI_BIN}" search "${entityName}"`, {
+                    env: { ...process.env, UKS_STORAGE_PATH: E2E_STORAGE },
+                    encoding: 'utf-8'
+                });
                 const verifyRes = JSON.parse(verifyOut);
                 
                 if (verifyRes.entities.length === 0) {
@@ -144,33 +156,26 @@ async function runAudit() {
         }
 
         // --- PHASE 3: ARCHITECTURE AUDIT ---
-        // Check for forbidden patterns in source code
+        // Check core library (packages/core/src) for forbidden patterns; CLI has no src/
         try {
-            const srcFiles = fs.readdirSync(path.join(CLI_ROOT, 'src')).filter(f => f.endsWith('.js'));
+            const coreSrc = path.join(CORE_ROOT, 'src');
             let archIssues = [];
-
-            srcFiles.forEach(file => {
-                const content = fs.readFileSync(path.join(CLI_ROOT, 'src', file), 'utf-8');
-                
-                // Rule 1: No hardcoded paths (e.g., /home/node)
-                if (content.includes('/home/node')) archIssues.push(`${file}: Hardcoded /home/node`);
-                
-                // Rule 2: No process.exit in library code (except ingest-manager fatal error, acceptable for CLI tool but bad for lib)
-                // graph-manager should throw, not exit.
-                if (file === 'graph-manager.js' && content.includes('process.exit')) archIssues.push(`${file}: forbidden process.exit`);
-                
-                // Rule 3: No console.log in core logic (should use logger or return values) - strict mode
-                // (Skipping for now as we rely on console.log for CLI output)
-            });
+            if (fs.existsSync(coreSrc)) {
+                const srcFiles = fs.readdirSync(coreSrc).filter(f => f.endsWith('.js'));
+                for (const file of srcFiles) {
+                    const content = fs.readFileSync(path.join(coreSrc, file), 'utf-8');
+                    if (content.includes('/home/node')) archIssues.push(`${file}: Hardcoded /home/node`);
+                    if (file === 'graph-manager.js' && content.includes('process.exit')) archIssues.push(`${file}: forbidden process.exit`);
+                }
+            }
 
             if (archIssues.length > 0) {
                 log('Architecture', 'warning', `Issues found:\n${archIssues.join('\n')}`);
             } else {
                 log('Architecture', 'success', 'Clean code scan (No hardcoded paths/forbidden exits)');
             }
-
         } catch (e) {
-             log('Architecture', 'error', `Scan failed: ${e.message}`);
+            log('Architecture', 'error', `Scan failed: ${e.message}`);
         }
 
     } catch (fatal) {

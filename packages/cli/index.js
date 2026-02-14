@@ -96,13 +96,6 @@ program
     });
 
 program
-    .command('search-old <query>') // Renamed to avoid conflict if any
-    .action(async (query) => {
-        const result = await graphManager.search(query);
-        console.log(JSON.stringify(result, null, 2));
-    });
-
-program
     .command('dump')
     .action(async () => {
         const result = await graphManager.getAll();

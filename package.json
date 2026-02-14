@@ -8,7 +8,8 @@
   ],
   "scripts": {
     "test": "npm test --workspaces --if-present",
-    "lint": "echo 'No global lint yet'"
+    "lint": "node scripts/lint.js",
+    "e2e": "node scripts/audit.js"
   },
   "author": "Xiao Fan Ge",
   "license": "MIT"

@@ -46,10 +46,4 @@ jobs:
         CI: true
 
     - name: 🧹 Lint Check (The Discipline)
-      # Check both packages
-      run: |
-        if grep -r "console.log" packages/*/src --exclude="index.js"; then
-          echo "❌ Forbidden console.log found in library code!"
-          exit 1
-        fi
-        echo "✅ Clean Code."
+      run: npm run lint
