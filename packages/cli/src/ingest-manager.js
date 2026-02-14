@@ -3,6 +3,7 @@ const path = require('path');
 const glob = require('glob');
 const jsonpath = require('jsonpath'); // Flexible extraction
 const graphManager = require('./graph-manager');
+const crypto = require('crypto'); // Need for ID generation inside batch
 
 class IngestManager {
     /**
@@ -37,6 +38,9 @@ class IngestManager {
         } else if (!options.json) {
             console.log(`[UKS] Found ${files.length} files matching '${pattern}'...`);
         }
+
+        // Prepare Batch Logic
+        const batchOperations = [];
 
         for (const file of files) {
             try {
@@ -79,32 +83,80 @@ class IngestManager {
                     continue;
                 }
 
-                // Live Run
-                await graphManager.addEntity({
-                    name: entityName,
-                    entityType: entityType,
-                    observations
-                });
-                report.entitiesAdded++;
-
-                const relations = this.extractRelations(data, entityName, mappingConfig);
-                for (const rel of relations) {
-                    // Lazy create target as Concept
-                    await graphManager.addEntity({ name: rel.to, entityType: 'Concept' });
+                // Queue Operation for Batch
+                batchOperations.push(async (graph) => {
+                    // Add Entity Logic (Duplicated from graph-manager but simplified for internal use)
+                    const existing = graph.entities.find(e => e.name === entityName);
+                    const inputObs = observations || [];
                     
-                    await graphManager.addRelation({
-                        from: entityName,
-                        to: rel.to,
-                        relationType: rel.type
-                    });
-                    report.relationsAdded++;
-                }
+                    if (existing) {
+                        const existingObs = existing.observations || [];
+                        const newObs = inputObs.filter(o => !existingObs.includes(o));
+                        existing.observations = [...existingObs, ...newObs];
+                    } else {
+                        const newId = crypto.randomUUID();
+                        const newEntity = {
+                            id: newId,
+                            name: entityName,
+                            entityType: entityType,
+                            observations: inputObs
+                        };
+                        graph.entities.push(newEntity);
+                        report.entitiesAdded++;
+                    }
 
+                    // Add Relations
+                    const relations = this.extractRelations(data, entityName, mappingConfig);
+                    for (const rel of relations) {
+                        // Lazy create target as Concept
+                        let targetEntity = graph.entities.find(e => e.name === rel.to);
+                        if (!targetEntity) {
+                            targetEntity = {
+                                id: crypto.randomUUID(),
+                                name: rel.to,
+                                entityType: 'Concept',
+                                observations: []
+                            };
+                            graph.entities.push(targetEntity);
+                        }
+
+                        // Resolve IDs
+                        const fromEntity = graph.entities.find(e => e.name === entityName); // Should exist now
+                        
+                        // Check duplicate relation
+                        const exists = graph.relations.some(r => 
+                            r.fromId === fromEntity.id && 
+                            r.toId === targetEntity.id && 
+                            r.relationType === rel.type
+                        );
+
+                        if (!exists) {
+                            graph.relations.push({
+                                fromId: fromEntity.id,
+                                toId: targetEntity.id,
+                                fromName: fromEntity.name,
+                                toName: targetEntity.name,
+                                relationType: rel.type
+                            });
+                            report.relationsAdded++;
+                        }
+                    }
+                });
+                
                 report.processed++;
 
             } catch (error) {
                 report.errors.push({ file, error: error.message });
             }
+        }
+
+        // Execute Batch (Atomic Write)
+        if (!options.dryRun && batchOperations.length > 0) {
+            await graphManager.updateGraph(async (graph) => {
+                for (const op of batchOperations) {
+                    await op(graph);
+                }
+            });
         }
 
         return report;

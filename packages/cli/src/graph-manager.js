@@ -94,12 +94,21 @@ class KnowledgeGraphManager {
         }
     }
 
-    async saveGraph(graph, context = 'default') {
+    // Batch Operation (Transaction-like)
+    async updateGraph(updaterFn, context = 'default') {
+        // Acquire lock for the whole batch
         if (!await acquireLock()) {
             throw new Error('Failed to acquire lock: Graph is busy.');
         }
 
         try {
+            const graph = await this.loadGraph(context); // Load current state (internal method, bypassing lock)
+            
+            // Execute updater function which modifies the graph object directly
+            // updaterFn(graph) -> void or Promise<void>
+            await updaterFn(graph);
+
+            // Save once (Backup happens here)
             // Backup before write! (Reversibility)
             await backupMgr.createSnapshot(context);
 
@@ -128,66 +137,62 @@ class KnowledgeGraphManager {
         }
     }
 
-    // --- Actions ---
-
     async addEntity(entity, context = 'default') {
-        // entity: { name, entityType, observations: [] }
-        const graph = await this.loadGraph(context);
-        const existing = graph.entities.find(e => e.name === entity.name);
-        const inputObs = entity.observations || [];
-        
-        if (existing) {
-            const existingObs = existing.observations || [];
-            const newObs = inputObs.filter(o => !existingObs.includes(o));
-            existing.observations = [...existingObs, ...newObs];
-            await this.saveGraph(graph, context);
-            return existing.id; // Return existing ID
-        } else {
-            const newId = crypto.randomUUID();
-            const newEntity = {
-                id: newId,
-                name: entity.name,
-                entityType: entity.entityType || 'concept',
-                observations: inputObs
-            };
-            graph.entities.push(newEntity);
-            await this.saveGraph(graph, context);
-            return newId;
-        }
+        // Wrapper for single entity add using updateGraph
+        let entityId;
+        await this.updateGraph((graph) => {
+            const existing = graph.entities.find(e => e.name === entity.name);
+            const inputObs = entity.observations || [];
+            
+            if (existing) {
+                const existingObs = existing.observations || [];
+                const newObs = inputObs.filter(o => !existingObs.includes(o));
+                existing.observations = [...existingObs, ...newObs];
+                entityId = existing.id;
+            } else {
+                const newId = crypto.randomUUID();
+                const newEntity = {
+                    id: newId,
+                    name: entity.name,
+                    entityType: entity.entityType || 'concept',
+                    observations: inputObs
+                };
+                graph.entities.push(newEntity);
+                entityId = newId;
+            }
+        }, context);
+        return entityId;
     }
 
     async addRelation(relation, context = 'default') {
-        // relation input: { from: "NameA", to: "NameB", relationType }
-        const graph = await this.loadGraph(context);
-        
-        // Resolve Names to IDs
-        const fromEntity = graph.entities.find(e => e.name === relation.from || e.id === relation.from);
-        const toEntity = graph.entities.find(e => e.name === relation.to || e.id === relation.to);
-
-        if (!fromEntity || !toEntity) {
-            throw new Error(`Cannot link: Entities not found ('${relation.from}' or '${relation.to}')`);
-        }
-
-        // Check duplicates (using IDs now)
-        const exists = graph.relations.some(r => 
-            r.fromId === fromEntity.id && 
-            r.toId === toEntity.id && 
-            r.relationType === relation.relationType
-        );
-
-        if (!exists) {
-            graph.relations.push({
-                fromId: fromEntity.id,
-                toId: toEntity.id,
-                // Keep names for human readability in JSONL, but logic relies on IDs
-                fromName: fromEntity.name,
-                toName: toEntity.name,
-                relationType: relation.relationType
-            });
-            await this.saveGraph(graph, context);
-            return true;
-        }
-        return false;
+        // Wrapper for single relation add using updateGraph
+        await this.updateGraph((graph) => {
+            // Resolve Names to IDs
+            const fromEntity = graph.entities.find(e => e.name === relation.from || e.id === relation.from);
+            const toEntity = graph.entities.find(e => e.name === relation.to || e.id === relation.to);
+    
+            if (!fromEntity || !toEntity) {
+                throw new Error(`Cannot link: Entities not found ('${relation.from}' or '${relation.to}')`);
+            }
+    
+            // Check duplicates (using IDs now)
+            const exists = graph.relations.some(r => 
+                r.fromId === fromEntity.id && 
+                r.toId === toEntity.id && 
+                r.relationType === relation.relationType
+            );
+    
+            if (!exists) {
+                graph.relations.push({
+                    fromId: fromEntity.id,
+                    toId: toEntity.id,
+                    fromName: fromEntity.name,
+                    toName: toEntity.name,
+                    relationType: relation.relationType
+                });
+            }
+        }, context);
+        return true;
     }
 
     async search(query, context = 'default') {
